@@ -114,13 +114,13 @@ fact %= 'int', lambda s: int(s[1])
 # use the second symbol `->`
 @G.production('expr -> expr + term')
 def expr_prod(s):
-    print('Estas sumando una expresion y un termino ;)')
+    print('Adding an expression and a term ;)')
     return s[1] + s[3]
 ```
 
 ## Handling of lexicographic and syntactic errors
 
-An important part of the parsing process is handling errors. For this we can do the parser by hand and insert the error report, since techniques such as `Panic Recovery Mode` which implements` PyJapt` only allow the execution of our parser not to stop, to give specific error reports `PyJapt` offers the creation of erroneous productions and to report common errors in a programming language such as the lack of a `;`, an unknown operator, etc. For this our grammar must activate the terminal error flag.
+An important part of the parsing process is handling errors. For this we can do the parser by hand and insert the error report, since techniques such as `Panic Recovery Mode` which implements `PyJapt` only allow the execution of our parser not to stop, to give specific error reports `PyJapt` offers the creation of erroneous productions to report common errors in a programming language such as the lack of a `;`, an unknown operator, etc. For this our grammar must activate the terminal error flag.
 
 ```python
 G.add_terminal_error() # Add the error terminal to the grammar.
