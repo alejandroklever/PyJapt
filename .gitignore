@@ -140,4 +140,8 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# project folders
 .idea
+build
+dist
+pyjapt.egg-info
