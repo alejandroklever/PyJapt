@@ -1,7 +1,7 @@
 import re
 
 PARSER_TEMPLATE = """from abc import ABC
-from pyjapt.parsing import ShiftReduceParser
+from pyjapt import ShiftReduceParser
 from %s import %s
 
 
@@ -24,7 +24,7 @@ class %s(ShiftReduceParser, ABC):
 
 LEXER_TEMPLATE = """import re
 
-from pyjapt.lexing import Token, Lexer
+from pyjapt import Token, Lexer
 from %s import %s
 
 

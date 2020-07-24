@@ -5,11 +5,11 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="pyjapt-alejandroklever",  # Replace with your own username
-    version="0.0.1b",
+    name="pyjapt",  # Replace with your own username
+    version="0.0.1",
     author="Alejandro Klever",
-    author_email="alejadndroklever.workon@gmail.com",
-    description="Just another Parsing Tool written in Python",
+    author_email="alejandroklever.workon@gmail.com",
+    description="Just Another Parsing Tool written in Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pypa/sampleproject",

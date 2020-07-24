@@ -1,10 +1,9 @@
 import json
 import re
-import sys
 from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict
 
-from .lexing import Lexer, Token
-from .serialization import LRParserSerializer, LexerSerializer
+from pyjapt.lexing import Lexer, Token
+from pyjapt.serialization import LRParserSerializer, LexerSerializer
 
 
 class GrammarError(Exception):
