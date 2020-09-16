@@ -35,7 +35,7 @@ class ContainerSet:
     def epsilon_update(self, other) -> bool:
         return self.set_epsilon(self.contains_epsilon | other.contains_epsilon)
 
-    def hard_update(self, other):
+    def hard_update(self, other) -> bool:
         return self.update(other) | self.epsilon_update(other)
 
     def __contains__(self, item):
@@ -59,5 +59,6 @@ class ContainerSet:
     def __eq__(self, other):
         if isinstance(other, set):
             return self.set == other
-        return isinstance(other,
-                          ContainerSet) and self.set == other.set and self.contains_epsilon == other.contains_epsilon
+        return (isinstance(other, ContainerSet) and
+                self.set == other.set and
+                self.contains_epsilon == other.contains_epsilon)

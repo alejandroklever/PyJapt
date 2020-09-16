@@ -27,14 +27,14 @@ div = G.add_terminals('/')
 num = G.add_terminal('int', regex=r'\d+')
 ```
 
-If we have a set of terminals whose regular expression matches their own name we can encapsulate them with the `add_terminals ()` function of the `Grammar` class.
+If we have a set of terminals whose regular expression matches their own name we can encapsulate them with the `add_terminals()` function of the `Grammar` class.
 
 ```python
 plus, minus, star, div = G.add_terminals('+ - * /')
 num = G.add_terminal('int', regex=r'\d+')
 ```
 
-It may also be the case that we want to apply a rule when a specific terminal is found, for this PyJapt gives us the `terminal ()` function decorator of the `Grammar` class that receives the terminal name and regular expression. The decorated function must receive as a parameter a reference to the lexer to be able to modify parameters such as the row and column of the terminals or the parser reading position and return a `Token`, if this token is not returned it will be ignored.
+It may also be the case that we want to apply a rule when a specific terminal is found, for this PyJapt gives us the `terminal()` function decorator of the `Grammar` class that receives the terminal name and regular expression. The decorated function must receive as a parameter a reference to the lexer to be able to modify parameters such as the row and column of the terminals or the parser reading position and return a `Token`, if this token is not returned it will be ignored.
 
 ```python
 @G.terminal('int', r'\d+')
@@ -45,7 +45,7 @@ def id_terminal(lexer):
     return lexer.token
 ```
 
-We can also use this form of terminal definition to skip certain characters or tokens.
+We can also use this form of terminal definition to skip certain characters or tokens, we just need to ignore the return in the method.
 
 ```python
 ##################
