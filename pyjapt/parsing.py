@@ -1,7 +1,7 @@
 import sys
 
 from pyjapt.automata import State
-from pyjapt.grammar import Item, RuleList, Symbol
+from pyjapt.grammar import Item, RuleList, Symbol, Grammar
 from pyjapt.lexing import Token
 from pyjapt.utils import ContainerSet
 
@@ -13,7 +13,7 @@ def compute_local_first(firsts, alpha):
     first_alpha = ContainerSet()
 
     try:
-        alpha_is_epsilon = alpha.IsEpsilon
+        alpha_is_epsilon = alpha.is_epsilon
     except AttributeError:
         alpha_is_epsilon = False
 
@@ -31,24 +31,24 @@ def compute_local_first(firsts, alpha):
     return first_alpha
 
 
-def compute_firsts(G):
+def compute_firsts(grammar: Grammar):
     firsts = {}
     change = True
 
-    for terminal in G.terminals:
+    for terminal in grammar.terminals:
         firsts[terminal] = ContainerSet(terminal)
 
-    for nonterminal in G.non_terminals:
-        firsts[nonterminal] = ContainerSet()
+    for non_terminal in grammar.non_terminals:
+        firsts[non_terminal] = ContainerSet()
 
     while change:
         change = False
 
         # P: X -> alpha
-        for production in G.productions:
-            X, alpha = production
+        for production in grammar.productions:
+            x, alpha = production
 
-            first_X = firsts[X]
+            first_x = firsts[x]
 
             try:
                 first_alpha = firsts[alpha]
@@ -58,45 +58,44 @@ def compute_firsts(G):
             local_first = compute_local_first(firsts, alpha)
 
             change |= first_alpha.hard_update(local_first)
-            change |= first_X.hard_update(local_first)
+            change |= first_x.hard_update(local_first)
 
     return firsts
 
 
-def compute_follows(G, firsts):
+def compute_follows(grammar, firsts):
     follows = {}
     change = True
 
     local_firsts = {}
 
     # init Follow(Vn)
-    for nonterminal in G.non_terminals:
-        follows[nonterminal] = ContainerSet()
-    follows[G.start_symbol] = ContainerSet(G.EOF)
+    for non_terminal in grammar.non_terminals:
+        follows[non_terminal] = ContainerSet()
+    follows[grammar.start_symbol] = ContainerSet(grammar.EOF)
 
     while change:
         change = False
 
         # P: X -> alpha
-        for production in G.productions:
-            X = production.left
-            alpha = production.right
+        for production in grammar.productions:
+            x, alpha = production
 
-            follow_X = follows[X]
+            follow_x = follows[x]
 
-            for i, symbol_Y in enumerate(alpha):
+            for i, symbol_y in enumerate(alpha):
                 # X -> zeta Y beta
-                if symbol_Y.IsNonTerminal:
-                    follow_Y = follows[symbol_Y]
+                if symbol_y.is_non_terminal:
+                    follow_y = follows[symbol_y]
                     try:
                         first_beta = local_firsts[alpha, i]
                     except KeyError:
                         first_beta = local_firsts[alpha, i] = compute_local_first(firsts, alpha[i + 1:])
                     # First(beta) - { epsilon } subset of Follow(Y)
-                    change |= follow_Y.update(first_beta)
+                    change |= follow_y.update(first_beta)
                     # beta ->* epsilon or X -> zeta Y ? Follow(X) subset of Follow(Y)
                     if first_beta.contains_epsilon:
-                        change |= follow_Y.update(follow_X)
+                        change |= follow_y.update(follow_x)
     # Follow(Vn)
     return follows
 
@@ -110,9 +109,9 @@ def closure_lr0(items):
     pending = set(items)
     while pending:
         current = pending.pop()
-        symbol = current.NextSymbol
+        symbol = current.next_symbol
 
-        if current.IsReduceItem or symbol.IsTerminal:
+        if current.is_reduce_item or symbol.is_terminal:
             continue
 
         new_items = set(Item(p, 0) for p in symbol.productions)  # if Item(p, 0) not in closure]
@@ -122,13 +121,13 @@ def closure_lr0(items):
 
 
 def goto_lr0(items, symbol):
-    return frozenset(item.NextItem() for item in items if item.NextSymbol == symbol)
+    return frozenset(item.next_item() for item in items if item.next_symbol == symbol)
 
 
-def build_lr0_automaton(G, just_kernel=False):
-    assert len(G.start_symbol.productions) == 1, 'Grammar must be augmented'
+def build_lr0_automaton(grammar, just_kernel=False):
+    assert len(grammar.start_symbol.productions) == 1, 'Grammar must be augmented'
 
-    start_production = G.start_symbol.productions[0]
+    start_production = grammar.start_symbol.productions[0]
     start_item = Item(start_production, 0)
     start = frozenset([start_item])
 
@@ -140,7 +139,7 @@ def build_lr0_automaton(G, just_kernel=False):
     pending = [start]
     visited = {start: automaton}
 
-    symbols = G.terminals + G.non_terminals
+    symbols = grammar.terminals + grammar.non_terminals
     while pending:
         current = pending.pop()
         current_state = visited[current]
@@ -169,7 +168,7 @@ def compress(items):
     centers = {}
 
     for item in items:
-        center = item.Center()
+        center = item.center()
         try:
             lookaheads = centers[center]
         except KeyError:
@@ -180,13 +179,13 @@ def compress(items):
 
 
 def expand(item, firsts):
-    next_symbol = item.NextSymbol
-    if next_symbol is None or not next_symbol.IsNonTerminal:
+    next_symbol = item.next_symbol
+    if next_symbol is None or not next_symbol.is_non_terminal:
         return []
 
     lookaheads = ContainerSet()
 
-    for preview in item.Preview():
+    for preview in item.preview():
         local_first = compute_local_first(firsts, preview)
         lookaheads.update(local_first)
 
@@ -207,19 +206,19 @@ def closure_lr1(items, firsts):
 
 def goto_lr1(items, symbol, firsts=None, just_kernel=False):
     assert just_kernel or firsts is not None, '`firsts` must be provided if `just_kernel=False`'
-    items = frozenset(item.NextItem() for item in items if item.NextSymbol == symbol)
+    items = frozenset(item.next_item() for item in items if item.next_symbol == symbol)
     return items if just_kernel else closure_lr1(items, firsts)
 
 
-def build_lr1_automaton(G, firsts=None):
-    assert len(G.start_symbol.productions) == 1, 'Grammar must be augmented'
+def build_lr1_automaton(grammar, firsts=None):
+    assert len(grammar.start_symbol.productions) == 1, 'Grammar must be augmented'
 
     if not firsts:
-        firsts = compute_firsts(G)
-    firsts[G.EOF] = ContainerSet(G.EOF)
+        firsts = compute_firsts(grammar)
+    firsts[grammar.EOF] = ContainerSet(grammar.EOF)
 
-    start_production = G.start_symbol.productions[0]
-    start_item = Item(start_production, 0, lookaheads=(G.EOF,))
+    start_production = grammar.start_symbol.productions[0]
+    start_item = Item(start_production, 0, lookaheads=(grammar.EOF,))
     start = frozenset([start_item])
 
     closure = closure_lr1(start, firsts)
@@ -228,7 +227,7 @@ def build_lr1_automaton(G, firsts=None):
     pending = [start]
     visited = {start: automaton}
 
-    symbols = G.terminals + G.non_terminals
+    symbols = grammar.terminals + grammar.non_terminals
     while pending:
         current = pending.pop()
         current_state = visited[current]
@@ -258,23 +257,23 @@ def determining_lookaheads(state, propagate, table, firsts):
     for item_kernel in state.state:
         closure = closure_lr1([Item(item_kernel.production, item_kernel.pos, ('#',))], firsts)
         for item in closure:
-            if item.IsReduceItem:
+            if item.is_reduce_item:
                 continue
 
-            next_state = state.get(item.NextSymbol.name)
-            next_item = item.NextItem().Center()
+            next_state = state.get(item.next_symbol.name)
+            next_item = item.next_item().center()
             if '#' in item.lookaheads:
                 propagate[state, item_kernel].append((next_state, next_item))
             table[next_state, next_item].extend(item.lookaheads - {'#'})
 
 
-def build_lalr1_automaton(G, firsts=None):
-    automaton = build_lr0_automaton(G, just_kernel=True)
+def build_lalr1_automaton(grammar, firsts=None):
+    automaton = build_lr0_automaton(grammar, just_kernel=True)
 
     if not firsts:
-        firsts = compute_firsts(G)
+        firsts = compute_firsts(grammar)
     firsts['#'] = ContainerSet('#')
-    firsts[G.EOF] = ContainerSet(G.EOF)
+    firsts[grammar.EOF] = ContainerSet(grammar.EOF)
 
     table = {(state, item): ContainerSet() for state in automaton for item in state.state}
     propagate = {(state, item): [] for state in automaton for item in state.state}
@@ -284,7 +283,7 @@ def build_lalr1_automaton(G, firsts=None):
     del firsts['#']
 
     start_item = list(automaton.state).pop()
-    table[automaton, start_item] = ContainerSet(G.EOF)
+    table[automaton, start_item] = ContainerSet(grammar.EOF)
 
     change = True
     while change:
@@ -312,9 +311,9 @@ class ShiftReduceParser:
     OK = 'OK'
     contains_errors = False
 
-    def __init__(self, G, verbose=False):
-        self.G = G
-        self.augmented_G = G.augmented_grammar(True)
+    def __init__(self, grammar: Grammar, verbose: bool = False):
+        self.G = grammar
+        self.augmented_G = grammar.augmented_grammar(True)
         self.firsts = compute_firsts(self.augmented_G)
         self.follows = compute_follows(self.augmented_G, self.firsts)
         self.automaton = self._build_automaton()
@@ -341,12 +340,13 @@ class ShiftReduceParser:
 
     def set_error(self, line, column, message):
         self._errors.append((line, column, message))
+
     #############
     #    End    #
     #############
 
     def _build_parsing_table(self):
-        G = self.augmented_G
+        grammar = self.augmented_G
         automaton = self.automaton
 
         for i, node in enumerate(automaton):
@@ -354,15 +354,15 @@ class ShiftReduceParser:
 
         for node in automaton:
             for item in node.state:
-                if item.IsReduceItem:
-                    if item.production.left == G.start_symbol:
-                        self._register(self.action, (node.id, G.EOF), (self.OK, None))
+                if item.is_reduce_item:
+                    if item.production.left == grammar.start_symbol:
+                        self._register(self.action, (node.id, grammar.EOF), (self.OK, None))
                     else:
                         for lookahead in self._lookaheads(item):
                             self._register(self.action, (node.id, lookahead), (self.REDUCE, item.production))
                 else:
-                    symbol = item.NextSymbol
-                    if symbol.IsTerminal:
+                    symbol = item.next_symbol
+                    if symbol.is_terminal:
                         self._register(self.action, (node.id, symbol), (self.SHIFT, node.get(symbol.name).id))
                     else:
                         self._register(self.goto, (node.id, symbol), node.get(symbol.name).id)

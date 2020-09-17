@@ -18,8 +18,16 @@ class Symbol:
         self.grammar: 'Grammar' = grammar
 
     @property
-    def IsEpsilon(self):
+    def is_epsilon(self) -> bool:
         return False
+
+    @property
+    def is_terminal(self) -> bool:
+        raise NotImplemented
+
+    @property
+    def is_non_terminal(self) -> bool:
+        raise NotImplemented()
 
     def __str__(self):
         return self.name
@@ -77,7 +85,7 @@ class NonTerminal(Symbol):
                     other = self.grammar.EPSILON, other[1]
 
             if isinstance(other[0], Symbol) and not isinstance(other[0], Sentence):
-                other[0] = Sentence(other[0])
+                other = Sentence(other[0]), other[1]
 
             if isinstance(other[0], Sentence):
                 p = Production(self, other[0], other[1])
@@ -96,15 +104,15 @@ class NonTerminal(Symbol):
         raise TypeError(other)
 
     @property
-    def IsTerminal(self):
+    def is_terminal(self) -> bool:
         return False
 
     @property
-    def IsNonTerminal(self):
+    def is_non_terminal(self) -> bool:
         return True
 
     @property
-    def IsEpsilon(self):
+    def is_epsilon(self) -> bool:
         return False
 
 
@@ -113,31 +121,31 @@ class Terminal(Symbol):
         super().__init__(name, grammar)
 
     @property
-    def IsTerminal(self):
+    def is_terminal(self) -> bool:
         return True
 
     @property
-    def IsNonTerminal(self):
+    def is_non_terminal(self) -> bool:
         return False
 
     @property
-    def IsEpsilon(self):
+    def is_epsilon(self):
         return False
 
 
 class ErrorTerminal(Terminal):
-    def __init__(self, G):
-        super().__init__('error', G)
+    def __init__(self, grammar: 'Grammar'):
+        super().__init__('error', grammar)
 
 
 class EOF(Terminal):
-    def __init__(self, G):
-        super().__init__('$', G)
+    def __init__(self, grammar: 'Grammar'):
+        super().__init__('$', grammar)
 
 
 class Sentence:
     def __init__(self, *args):
-        self.symbols = tuple(x for x in args if not x.IsEpsilon)
+        self.symbols = tuple(x for x in args if not x.is_epsilon)
         self.hash = hash(self.symbols)
 
     def __len__(self):
@@ -183,7 +191,7 @@ class Sentence:
         return self.hash
 
     @property
-    def IsEpsilon(self):
+    def is_epsilon(self):
         return False
 
 
@@ -191,8 +199,8 @@ class SentenceList:
     def __init__(self, *args):
         self._sentences = list(args)
 
-    def Add(self, symbol):
-        if not symbol and (symbol is None or not symbol.IsEpsilon):
+    def add(self, symbol):
+        if not symbol and (symbol is None or not symbol.is_epsilon):
             raise ValueError(symbol)
 
         self._sentences.append(symbol)
@@ -202,7 +210,7 @@ class SentenceList:
 
     def __or__(self, other):
         if isinstance(other, Sentence):
-            self.Add(other)
+            self.add(other)
             return self
 
         if isinstance(other, Symbol):
@@ -235,7 +243,7 @@ class Epsilon(Terminal, Sentence):
         return hash("")
 
     @property
-    def IsEpsilon(self):
+    def is_epsilon(self):
         return True
 
 
@@ -247,8 +255,8 @@ class Production:
         self.rule: Optional[Callable[['RuleList'], object]] = rule
 
     @property
-    def IsEpsilon(self):
-        return self.right.IsEpsilon
+    def is_epsilon(self) -> bool:
+        return self.right.is_epsilon
 
     def __str__(self):
         return '%s := %s' % (self.left, self.right)
@@ -377,9 +385,10 @@ class Grammar:
         """
 
         def decorator(rule: Optional[Callable[['RuleList'], object]]):
-            head, body = production.split('->')
+            head, bodies = production.split('->')
             head = self[head.strip()]
-            head %= body.strip(), rule
+            for body in bodies.split('|'):
+                head %= body.strip(), rule
             return rule
 
         return decorator
@@ -407,30 +416,27 @@ class Grammar:
 
     def augmented_grammar(self, force: bool = False):
         if not self.is_augmented_grammar or force:
-
-            G = self.copy()
-            # S, self.startSymbol, SS = self.startSymbol, None, self.NonTerminal('S\'', True)
-            S = G.start_symbol
-            G.start_symbol = None
-            SS = G.add_non_terminal('S\'', True)
-            SS %= S + G.EPSILON, lambda x: x
-
-            return G
+            grammar = self.copy()
+            start_symbol = grammar.start_symbol
+            grammar.start_symbol = None
+            new_start_symbol = grammar.add_non_terminal('S\'', True)
+            new_start_symbol %= start_symbol + grammar.EPSILON, lambda x: x
+            return grammar
         else:
             return self.copy()
 
     def copy(self):
-        G = Grammar()
-        G.productions = self.productions.copy()
-        G.non_terminals = self.non_terminals.copy()
-        G.terminals = self.terminals.copy()
-        G.start_symbol = self.start_symbol
-        G.EPSILON = self.EPSILON
-        G.ERROR = self.ERROR
-        G.EOF = self.EOF
-        G.symbol_dict = self.symbol_dict.copy()
+        grammar = Grammar()
+        grammar.productions = self.productions.copy()
+        grammar.non_terminals = self.non_terminals.copy()
+        grammar.terminals = self.terminals.copy()
+        grammar.start_symbol = self.start_symbol
+        grammar.EPSILON = self.EPSILON
+        grammar.ERROR = self.ERROR
+        grammar.EOF = self.EOF
+        grammar.symbol_dict = self.symbol_dict.copy()
 
-        return G
+        return grammar
 
     def serialize_lexer(self, class_name: str, grammar_module_name: str, grammar_variable_name: str = 'G'):
         LexerSerializer.build(self, class_name, grammar_module_name, grammar_variable_name)
@@ -453,8 +459,8 @@ class Grammar:
 
             productions.append({'Head': head, 'Body': body})
 
-        d = {'NonTerminals': [symb.name for symb in self.non_terminals],
-             'Terminals': [symb.name for symb in self.terminals],
+        d = {'NonTerminals': [symbol.name for symbol in self.non_terminals],
+             'Terminals': [symbol.name for symbol in self.terminals],
              'Productions': productions}
 
         # [{'Head':p.Left.Name, "Body": [s.Name for s in p.Right]} for p in self.Productions]
@@ -475,20 +481,20 @@ class Grammar:
     def from_json(data):
         data = json.loads(data)
 
-        G = Grammar()
-        dic = {'epsilon': G.EPSILON}
+        grammar = Grammar()
+        dic = {'epsilon': grammar.EPSILON}
 
         for term in data['Terminals']:
-            dic[term] = G.add_terminal(term)
+            dic[term] = grammar.add_terminal(term)
 
         for noTerm in data['NonTerminals']:
-            dic[noTerm] = G.add_non_terminal(noTerm)
+            dic[noTerm] = grammar.add_non_terminal(noTerm)
 
         for p in data['Productions']:
             head = p['Head']
             dic[head] %= Sentence(*[dic[term] for term in p['Body']])
 
-        return G
+        return grammar
 
     def __getitem__(self, item):
         try:
@@ -505,9 +511,9 @@ class Grammar:
 
         ans = 'Non-Terminals:\n\t'
 
-        nonterminals = mul * (len(self.non_terminals) - 1) + '%s\n'
+        non_terminals = mul * (len(self.non_terminals) - 1) + '%s\n'
 
-        ans += nonterminals % tuple(self.non_terminals)
+        ans += non_terminals % tuple(self.non_terminals)
 
         ans += 'Terminals:\n\t'
 
@@ -558,27 +564,27 @@ class Item:
         return hash((self.production, self.pos, self.lookaheads))
 
     @property
-    def IsReduceItem(self) -> bool:
+    def is_reduce_item(self) -> bool:
         return len(self.production.right) == self.pos
 
     @property
-    def NextSymbol(self) -> Optional[Symbol]:
+    def next_symbol(self) -> Optional[Symbol]:
         if self.pos < len(self.production.right):
             return self.production.right[self.pos]
         else:
             return None
 
-    def NextItem(self) -> Optional['Item']:
+    def next_item(self) -> Optional['Item']:
         if self.pos < len(self.production.right):
             return Item(self.production, self.pos + 1, self.lookaheads)
         else:
             return None
 
-    def Preview(self, skip=1) -> List[Symbol]:
+    def preview(self, skip=1) -> List[Symbol]:
         unseen = self.production.right[self.pos + skip:]
         return [unseen + (lookahead,) for lookahead in self.lookaheads]
 
-    def Center(self) -> 'Item':
+    def center(self) -> 'Item':
         return Item(self.production, self.pos)
 
 
