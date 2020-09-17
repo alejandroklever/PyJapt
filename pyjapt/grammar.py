@@ -1,9 +1,12 @@
 import json
 import re
-from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict
+from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict, Union, Any
 
 from pyjapt.lexing import Lexer, Token
 from pyjapt.serialization import LRParserSerializer, LexerSerializer
+
+TerminalRule = Callable[[Lexer], Optional[Token]]
+ProductionRule = Callable[['RuleList'], object]
 
 
 class GrammarError(Exception):
@@ -56,7 +59,8 @@ class NonTerminal(Symbol):
         self.productions: List['Production'] = []
         self.error_productions: List['Production'] = []
 
-    def __mod__(self, other):
+    def __mod__(self, other: Union[
+        str, Symbol, 'Sentence', Tuple[str, Any], Tuple[Symbol, Any], Tuple['Sentence', Any]]) -> 'NonTerminal':
         if isinstance(other, str):
             if other:
                 p = Production(self, Sentence(*(self.grammar[s] for s in other.split())))
@@ -374,7 +378,7 @@ class Grammar:
         self.productions.append(production)
         self.production_dict[repr(production)] = production
 
-    def production(self, production: str):
+    def production(self, production: str) -> Callable[[ProductionRule], ProductionRule]:
         """
         Return a function to decorate a method that will be used for as production rule
 
@@ -384,7 +388,7 @@ class Grammar:
         :return: a function to decorate the production
         """
 
-        def decorator(rule: Optional[Callable[['RuleList'], object]]):
+        def decorator(rule: ProductionRule) -> ProductionRule:
             head, bodies = production.split('->')
             head = self[head.strip()]
             for body in bodies.split('|'):
@@ -393,7 +397,7 @@ class Grammar:
 
         return decorator
 
-    def terminal(self, name: str, regex: str):
+    def terminal(self, name: str, regex: str) -> Callable[[TerminalRule], TerminalRule]:
         """
         Return a function to decorate a method that will be used for as terminal rule in tokenizer process
 
@@ -404,7 +408,7 @@ class Grammar:
         :return: a function to decorate the production
         """
 
-        def decorator(rule: Optional[Callable[[Lexer], Optional[Token]]]):
+        def decorator(rule: TerminalRule) -> TerminalRule:
             self.add_terminal(name, regex, rule)
             return rule
 
@@ -437,6 +441,10 @@ class Grammar:
         grammar.symbol_dict = self.symbol_dict.copy()
 
         return grammar
+
+    def get_lexer(self) -> Lexer:
+        return Lexer([(s, r) for s, (r, _, _) in self.terminal_rules], self.EOF.name,
+                     {s: r for s, (_, _, r) in self.terminal_rules}, self.lexical_error_handler)
 
     def serialize_lexer(self, class_name: str, grammar_module_name: str, grammar_variable_name: str = 'G'):
         LexerSerializer.build(self, class_name, grammar_module_name, grammar_variable_name)
