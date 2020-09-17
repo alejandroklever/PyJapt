@@ -12,8 +12,8 @@ setup(
     description="Just Another Parsing Tool written in Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
-    packages=find_packages(),
+    url="https://github.com/alejandroklever/PyJapt",
+    packages=['pyjapt'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
