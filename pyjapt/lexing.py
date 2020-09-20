@@ -96,7 +96,8 @@ class Lexer:
 
     @staticmethod
     def _build_regex(table: List[Tuple[str, str]]) -> Pattern:
-        return re.compile('|'.join(['(?P<%s>%s)' % (name, regex) for name, regex in table]))
+        return re.compile('|'.join(
+            [('(?P<%s>%s)' % (name, regex) if name is not None else '(%s)' % regex) for name, regex in table]))
 
     def __call__(self, text: str) -> List[Token]:
         return list(self.tokenize(text))

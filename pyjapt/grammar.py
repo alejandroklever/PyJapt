@@ -1,6 +1,6 @@
 import json
 import re
-from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict, Union, Any
+from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict
 
 from pyjapt.lexing import Lexer, Token
 from pyjapt.serialization import LRParserSerializer, LexerSerializer
@@ -59,8 +59,7 @@ class NonTerminal(Symbol):
         self.productions: List['Production'] = []
         self.error_productions: List['Production'] = []
 
-    def __mod__(self, other: Union[
-        str, Symbol, 'Sentence', Tuple[str, Any], Tuple[Symbol, Any], Tuple['Sentence', Any]]) -> 'NonTerminal':
+    def __mod__(self, other) -> 'NonTerminal':
         if isinstance(other, str):
             if other:
                 p = Production(self, Sentence(*(self.grammar[s] for s in other.split())))
@@ -263,7 +262,7 @@ class Production:
         return self.right.is_epsilon
 
     def __str__(self):
-        return '%s := %s' % (self.left, self.right)
+        return '%s -> %s' % (self.left, self.right)
 
     def __repr__(self):
         return '%s -> %s' % (self.left, self.right)
@@ -295,8 +294,7 @@ class Grammar:
         self.production_dict = {}  # type: Dict[str, Production]
         self.symbol_dict = {'$': self.EOF, 'error': self.ERROR}  # type: Dict[str, Symbol]
 
-    def add_terminal(self, name: str, regex: str = None,
-                     rule: Optional[Callable[[Lexer], Optional[Token]]] = None) -> Terminal:
+    def add_terminal(self, name: str, regex: str = None, rule: Optional[TerminalRule] = None) -> Terminal:
         """
         Create a terminal for the grammar with its respective regular expression
 
@@ -378,20 +376,20 @@ class Grammar:
         self.productions.append(production)
         self.production_dict[repr(production)] = production
 
-    def production(self, production: str) -> Callable[[ProductionRule], ProductionRule]:
+    def production(self, *productions: str) -> Callable[[ProductionRule], ProductionRule]:
         """
         Return a function to decorate a method that will be used for as production rule
 
-        :param production: is a string representing the production to attach the decorated function,
+        :param productions: is a sequence of strings representing the production to attach the decorated function,
                        the string has the form '<non-terminal name> -> <symbols separated with white spaces>'
 
         :return: a function to decorate the production
         """
 
         def decorator(rule: ProductionRule) -> ProductionRule:
-            head, bodies = production.split('->')
-            head = self[head.strip()]
-            for body in bodies.split('|'):
+            for production in productions:
+                head, body = production.split('->')
+                head = self[head.strip()]
                 head %= body.strip(), rule
             return rule
 
@@ -443,15 +441,41 @@ class Grammar:
         return grammar
 
     def get_lexer(self) -> Lexer:
-        return Lexer([(s, r) for s, (r, _, _) in self.terminal_rules], self.EOF.name,
-                     {s: r for s, (_, _, r) in self.terminal_rules}, self.lexical_error_handler)
+        items = self.terminal_rules.items()
+        f1 = filter(lambda x: x[1][2] is not None, items)
+        f2 = filter(lambda x: x[1][2] is None and not x[1][1], items)
+        f3 = filter(lambda x: x[1][2] is None and x[1][1], items)
+
+        ruled_tokens = list(f1)
+        not_literal_tokens = sorted(f2, key=lambda x: len(x[1][0]), reverse=True)
+        literal_tokens = sorted(f3, key=lambda x: len(x[1][0]), reverse=True)
+
+        table = (
+                [(name, regex) for name, (regex, _, _) in ruled_tokens] +
+                [(name, regex) for name, (regex, _, _) in not_literal_tokens] +
+                [(None, regex) for _, (regex, _, _) in literal_tokens]
+        )
+
+        return Lexer(table, self.EOF.name,
+                     {s: r for s, (_, _, r) in items if r is not None}, self.lexical_error_handler)
 
     def serialize_lexer(self, class_name: str, grammar_module_name: str, grammar_variable_name: str = 'G'):
-        LexerSerializer.build(self, class_name, grammar_module_name, grammar_variable_name)
+        LexerSerializer.build(self.get_lexer(), class_name, grammar_module_name, grammar_variable_name)
 
     @staticmethod
     def serialize_parser(parser, class_name: str, grammar_module_name: str, grammar_variable_name: str = 'G'):
         LRParserSerializer.build(parser, class_name, grammar_module_name, grammar_variable_name)
+
+    @property
+    def is_augmented_grammar(self):
+        augmented = 0
+        for left, _ in self.productions:
+            if self.start_symbol == left:
+                augmented += 1
+        if augmented <= 1:
+            return True
+        else:
+            return False
 
     def to_json(self):
 
@@ -473,17 +497,6 @@ class Grammar:
 
         # [{'Head':p.Left.Name, "Body": [s.Name for s in p.Right]} for p in self.Productions]
         return json.dumps(d)
-
-    @property
-    def is_augmented_grammar(self):
-        augmented = 0
-        for left, _ in self.productions:
-            if self.start_symbol == left:
-                augmented += 1
-        if augmented <= 1:
-            return True
-        else:
-            return False
 
     @staticmethod
     def from_json(data):
@@ -514,25 +527,15 @@ class Grammar:
             return None
 
     def __str__(self):
-
         mul = '%s, '
-
         ans = 'Non-Terminals:\n\t'
-
         non_terminals = mul * (len(self.non_terminals) - 1) + '%s\n'
-
         ans += non_terminals % tuple(self.non_terminals)
-
         ans += 'Terminals:\n\t'
-
         terminals = mul * (len(self.terminals) - 1) + '%s\n'
-
         ans += terminals % tuple(self.terminals)
-
         ans += 'Productions:\n\t'
-
         ans += str(self.productions)
-
         return ans
 
 
@@ -588,7 +591,7 @@ class Item:
         else:
             return None
 
-    def preview(self, skip=1) -> List[Symbol]:
+    def preview(self, skip: int = 1) -> List[Symbol]:
         unseen = self.production.right[self.pos + skip:]
         return [unseen + (lookahead,) for lookahead in self.lookaheads]
 
@@ -610,14 +613,8 @@ class RuleList:
     def __setitem__(self, key, value):
         self.__list[key] = value
 
-    def lineno(self, index):
-        pass
-
-    def success(self):
-        pass
-
-    def warning(self):
-        pass
+    def __len__(self):
+        return len(self.__list)
 
     def error(self, index, message):
         self.__parser.set_error(self[index].line, self[index].column, message)

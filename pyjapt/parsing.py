@@ -1,4 +1,5 @@
 import sys
+from typing import List
 
 from pyjapt.automata import State
 from pyjapt.grammar import Item, RuleList, Symbol, Grammar
@@ -322,25 +323,24 @@ class ShiftReduceParser:
 
         self.action = {}
         self.goto = {}
-        self.sr = 0
-        self.rr = 0
+        self.shift_reduce_count = 0
+        self.reduce_reduce_count = 0
         self._errors = []
         self._build_parsing_table()
 
         if self.conflicts:
-            sys.stderr.write(f"Warning: {self.sr} Shift-Reduce Conflicts\n")
-            sys.stderr.write(f"Warning: {self.rr} Reduce-Reduce Conflicts\n")
+            sys.stderr.write(f"Warning: {self.shift_reduce_count} Shift-Reduce Conflicts\n")
+            sys.stderr.write(f"Warning: {self.reduce_reduce_count} Reduce-Reduce Conflicts\n")
 
     ##############
     # Errors API #
     ##############
     @property
-    def errors(self):
-        return [m for _, _, m in sorted(self._errors)]
+    def errors(self, clean: bool = True):
+        return [(m if clean else (r, c, m)) for r, c, m in sorted(self._errors)]
 
     def set_error(self, line, column, message):
         self._errors.append((line, column, message))
-
     #############
     #    End    #
     #############
@@ -373,10 +373,10 @@ class ShiftReduceParser:
             if action != value[0]:
                 if action == self.SHIFT:
                     table[key] = value  # By default shifting if exists a Shift-Reduce Conflict
-                self.sr += 1
+                self.shift_reduce_count += 1
                 self.conflicts.append(('SR', value[1], tag))
             else:
-                self.rr += 1
+                self.reduce_reduce_count += 1
                 self.conflicts.append(('RR', value[1], tag))
         else:
             table[key] = value
@@ -387,7 +387,7 @@ class ShiftReduceParser:
     def _lookaheads(self, item):
         raise NotImplementedError()
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: List[Token]):
         """
         Parse the given TokenList
 
@@ -404,6 +404,10 @@ class ShiftReduceParser:
 
             state = stack[-1]
             lookahead = tokens[cursor]
+
+            if isinstance(lookahead.token_type, str):
+                # making the token_type always a terminal
+                lookahead.token_type = self.G[lookahead.token_type]
 
             if self.verbose:
                 prev = ' '.join([s.name for s in stack if isinstance(s, Symbol)])

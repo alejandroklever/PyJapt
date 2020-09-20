@@ -69,9 +69,7 @@ class LRParserSerializer:
                 s1 += f'("{act}", {variable_name}["{repr(tag)}"]),\n'
             else:
                 s1 += f'("{act}", None),\n'
-
         s1 += '        }'
-
         s2 = '{\n'
         for (state, symbol), dest in parser.goto.items():
             s2 += f'            ({state}, {variable_name}["{symbol}"]): {dest},\n'
@@ -82,20 +80,8 @@ class LRParserSerializer:
 
 class LexerSerializer:
     @staticmethod
-    def build(grammar, lexer_class_name, grammar_module_name, grammar_variable_name):
-        f1 = filter(lambda x: x[1][2] is not None, grammar.terminal_rules.items())
-        f2 = filter(lambda x: x[1][2] is None and not x[1][1], grammar.terminal_rules.items())
-        f3 = filter(lambda x: x[1][2] is None and x[1][1], grammar.terminal_rules.items())
-
-        ruled_tokens = list(f1)
-        not_literal_tokens = sorted(f2, key=lambda x: len(x[1][0]), reverse=True)
-        literal_tokens = sorted(f3, key=lambda x: len(x[1][0]), reverse=True)
-
-        pattern = re.compile('|'.join(
-            ['(?P<%s>%s)' % (name, regex) for name, (regex, _, _) in ruled_tokens] +
-            ['(?P<%s>%s)' % (name, regex) for name, (regex, _, _) in not_literal_tokens] +
-            ['(%s)' % regex for _, (regex, _, _) in literal_tokens]
-        )).pattern
+    def build(lexer, lexer_class_name, grammar_module_name, grammar_variable_name):
+        pattern = lexer.pattern
 
         token_rules = f"{{key: rule for key, (_, _, rule) in {grammar_variable_name}.terminal_rules.items() if rule " \
                       f"is not None}}"
@@ -108,7 +94,7 @@ class LexerSerializer:
 
         content = LEXER_TEMPLATE % (
             grammar_module_name, grammar_variable_name, lexer_class_name, pattern, token_rules, error_handler,
-            grammar.EOF.name, call_return,
+            lexer.eof, call_return,
         )
 
         try:
