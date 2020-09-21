@@ -1,7 +1,7 @@
 import json
 import re
 import sys
-from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict
+from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict, Set
 
 from pyjapt.automata import State
 from pyjapt.lexing import Lexer, Token
@@ -19,7 +19,7 @@ class GrammarError(Exception):
 
 
 class Symbol:
-    def __init__(self, name: str, grammar: 'Grammar'):
+    def __init__(self, name: str, grammar: Optional['Grammar']):
         self.name: str = name
         self.grammar: 'Grammar' = grammar
 
@@ -121,6 +121,11 @@ class Terminal(Symbol):
     @property
     def is_terminal(self) -> bool:
         return True
+
+
+class PropagationTerminal(Symbol):
+    def __init__(self):
+        super().__init__('#', None)
 
 
 class ErrorTerminal(Terminal):
@@ -676,7 +681,7 @@ def compute_firsts(grammar: Grammar):
     return firsts
 
 
-def compute_follows(grammar, firsts):
+def compute_follows(grammar: Grammar, firsts):
     follows = {}
     change = True
 
@@ -716,7 +721,7 @@ def compute_follows(grammar, firsts):
 #########################
 # LR0 AUTOMATA BUILDING #
 #########################
-def closure_lr0(items):
+def closure_lr0(items: Iterable[Item]):
     closure = set(items)
 
     pending = set(items)
@@ -733,11 +738,11 @@ def closure_lr0(items):
     return frozenset(closure)
 
 
-def goto_lr0(items, symbol):
+def goto_lr0(items: Iterable[Item], symbol: Symbol) -> FrozenSet[Item]:
     return frozenset(item.next_item() for item in items if item.next_symbol == symbol)
 
 
-def build_lr0_automaton(grammar, just_kernel=False):
+def build_lr0_automaton(grammar: Grammar, just_kernel: bool = False) -> State:
     assert len(grammar.start_symbol.productions) == 1, 'Grammar must be augmented'
 
     start_production = grammar.start_symbol.productions[0]
@@ -777,7 +782,7 @@ def build_lr0_automaton(grammar, just_kernel=False):
 #########################
 # LR1 AUTOMATA BUILDING #
 #########################
-def compress(items):
+def compress(items: Iterable[Item]) -> Set[Item]:
     centers = {}
 
     for item in items:
@@ -791,7 +796,7 @@ def compress(items):
     return set(Item(x.production, x.pos, set(lookaheads)) for x, lookaheads in centers.items())
 
 
-def expand(item, firsts):
+def expand(item: Item, firsts):
     next_symbol = item.next_symbol
     if next_symbol is None or not next_symbol.is_non_terminal:
         return []
