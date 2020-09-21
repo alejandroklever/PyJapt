@@ -1,5 +1,4 @@
 import re
-import sys
 from typing import List, Any, Generator, Tuple, Pattern, Optional, Callable, Dict
 
 
@@ -55,8 +54,9 @@ class Lexer:
         self.pattern: Pattern = self._build_regex(table)
         self.token_rules = token_rules  # type: Dict[str, Callable[['Lexer'], Optional[Token]]]
         self.contain_errors: bool = False
-        self.error_handler = error_handler  # type: Callable[['Lexer'], None]
+        self.error_handler = error_handler if error_handler is not None else self.error
         self.eof: str = eof
+        self.errors: List[Tuple[int, int, str]] = []
 
     def tokenize(self, text: str) -> Generator[Token, None, None]:
         while self.position < len(text):
@@ -84,15 +84,14 @@ class Lexer:
             self.column += len(match.group())
         yield Token('$', self.eof, self.lineno, self.column)
 
-    @staticmethod
-    def print_error(error_msg):
-        sys.stderr.write(error_msg + '\n')
+    def set_error(self, line: int, col: int, error_msg: str):
+        self.errors.append((line, col, error_msg))
 
     @staticmethod
     def error(lexer: 'Lexer') -> None:
-        lexer.print_error(f'LexerError: Unexpected symbol "{lexer.token.lex}"')
-        lexer.position += 1
-        lexer.column += 1
+        lexer.set_error(lexer.token.line, lexer.token.column, f'LexerError: Unexpected symbol "{lexer.token.lex}"')
+        lexer.position += len(lexer.token.lex)
+        lexer.column += len(lexer.token.lex)
 
     @staticmethod
     def _build_regex(table: List[Tuple[str, str]]) -> Pattern:

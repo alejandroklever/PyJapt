@@ -1,6 +1,35 @@
 from pyjapt import Grammar
 
 
+def parse_arithmetic_expression(text: str):
+    g = Grammar()
+    expr = g.add_non_terminal('expr', True)
+    term, fact = g.add_non_terminals('term fact')
+    g.add_terminals('+ - / * ( )')
+    g.add_terminal('int', regex=r'\d+')
+
+    @g.terminal('whitespace', r' +')
+    def whitespace(_lexer):
+        _lexer.column += len(_lexer.token.lex)
+        _lexer.position += len(_lexer.token.lex)
+
+    expr %= 'expr + term', lambda s: s[1] + s[3]
+    expr %= 'expr - term', lambda s: s[1] - s[3]
+    expr %= 'term', lambda s: s[1]
+
+    term %= 'term * fact', lambda s: s[1] * s[3]
+    term %= 'term / fact', lambda s: s[1] // s[3]
+    term %= 'fact', lambda s: s[1]
+
+    fact %= '( expr )', lambda s: s[2]
+    fact %= 'int', lambda s: int(s[1])
+
+    lexer = g.get_lexer()
+    parser = g.get_parser('slr')
+
+    return parser(lexer(text))
+
+
 def test_lexer(text: str):
     g = Grammar()
     g.add_non_terminal('expr', True)
@@ -35,7 +64,7 @@ def test_lexer(text: str):
             if rules[2] == '*':
                 return rules[1] * rules[3]
             elif rules[2] == '/' and rules[3] != 0:
-                return rules[1] / rules[3]
+                return rules[1] // rules[3]
             raise ValueError(rules[2])
 
         if len(rules) == 2:
@@ -48,7 +77,7 @@ def test_lexer(text: str):
             return rules[2]
 
         if len(rules) == 2:
-            return int(rules[1])
+            return float(rules[1])
 
     parser = g.get_parser('slr')
     lexer = g.get_lexer()
@@ -59,7 +88,9 @@ def test_lexer(text: str):
 
 def test_arithmetic_grammar():
     tests = [
-        ('1 + 2 * 5 - 4', 7)
+        ('1 + 2 * 5 - 4', 7),
+        ('(1 - 2 + 45) * 3 / 2', 66),
+        ('(2 + 2) * 2 + 2', 10),
     ]
     for text, result in tests:
-        assert test_lexer(text) == result, 'Bad Parsing'
+        assert parse_arithmetic_expression(text) == result, 'Bad Parsing'

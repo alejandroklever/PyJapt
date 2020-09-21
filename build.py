@@ -15,4 +15,3 @@ with open('pyproject.toml', 'w') as f:
     f.write(s)
 
 os.system('poetry build')
-os.system('poetry publish')
