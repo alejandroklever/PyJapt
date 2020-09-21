@@ -15,4 +15,4 @@ with open('pyproject.toml', 'w') as f:
     f.write(s)
 
 os.system('poetry build')
-os.system(f'pip install dist/pyjapt-{version}-py3-none-any.whl')
+os.system('poetry publish')
