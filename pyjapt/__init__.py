@@ -1,5 +1,4 @@
-from pyjapt.grammar import Grammar
 from pyjapt.lexing import Lexer, Token
-from pyjapt.parsing import ShiftReduceParser, LR1Parser, LALR1Parser, SLRParser
+from pyjapt.parsing import ShiftReduceParser, LR1Parser, LALR1Parser, SLRParser, Grammar
 
 __version__ = '0.1.2'

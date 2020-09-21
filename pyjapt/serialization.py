@@ -1,5 +1,3 @@
-import re
-
 PARSER_TEMPLATE = """from abc import ABC
 from pyjapt import ShiftReduceParser
 from %s import %s

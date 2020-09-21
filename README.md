@@ -131,7 +131,7 @@ def attribute_error(s):
     # With this line we report the error message
     # As the semantic rule of s [5] is the token itself (because it is a terminal), so we have access
     # to your lexeme, token type, line and column.
-    s.error(5, f"{s[5].line, s[5].column} - SyntacticError: Expected ';' instead of '{s[5].lex}'")
+    s.set_error(5, f"{s[5].line, s[5].column} - SyntacticError: Expected ';' instead of '{s[5].lex}'")
 
     # With this line we allow to continue creating a node of the ast to
     # be able to detect semantic errors despite syntactic errors

@@ -1,5 +1,4 @@
 from pyjapt import Grammar
-from pyjapt import SLRParser
 
 
 def test_lexer(text: str):
@@ -51,11 +50,10 @@ def test_lexer(text: str):
         if len(rules) == 2:
             return int(rules[1])
 
-    parser = SLRParser(g)
+    parser = g.get_parser('slr')
     lexer = g.get_lexer()
 
     value = parser(lexer(text))
-    print(value)
     return value
 
 
