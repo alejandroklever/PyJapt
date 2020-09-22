@@ -448,8 +448,12 @@ class Grammar:
                 [(None, regex) for _, (regex, _, _) in literal_tokens]
         )
 
-        return Lexer(table, self.EOF.name,
-                     {s: r for s, (_, _, r) in items if r is not None}, self.lexical_error_handler)
+        return Lexer(
+            table,
+            self.EOF.name,
+            {s: r for s, (_, _, r) in items if r is not None},
+            self.lexical_error_handler
+        )
 
     def get_parser(self, name: str, verbose: bool = False):
         if name == 'slr':

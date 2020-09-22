@@ -5,7 +5,7 @@ from %s import %s
 
 class %s(ShiftReduceParser, ABC):
     def __init__(self, verbose=False):
-        self.G = G
+        self.grammar = %s
         self.verbose = verbose
         self.action = self.__action_table()
         self.goto = self.__goto_table()
@@ -47,7 +47,8 @@ class LRParserSerializer:
     @staticmethod
     def build(parser, parser_class_name, grammar_module_name, grammar_variable_name):
         action, goto = LRParserSerializer._build_parsing_tables(parser, grammar_variable_name)
-        content = PARSER_TEMPLATE % (grammar_module_name, grammar_variable_name, parser_class_name, action, goto)
+        content = PARSER_TEMPLATE % (grammar_module_name, grammar_variable_name, parser_class_name,
+                                     grammar_variable_name, action, goto)
         try:
             with open('parsertab.py', 'x') as f:
                 f.write(content)
