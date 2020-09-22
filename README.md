@@ -1,5 +1,13 @@
 # Lexer and LR parser generator  "PyJapt"
 
+## Installation
+
+```
+pip install pyjapt
+```
+
+## PyJapt
+
 PyJapt is a lexer and parser generator developed to provide a solution not only to the creation of these pieces of the compilation process, but also to allow a custom syntactic and lexicographic error handling interface. For its construction we have been inspired by other parser generators such as yacc, bison, ply and antlr, for example.
 
 PyJapt revolves around the concept of grammar.

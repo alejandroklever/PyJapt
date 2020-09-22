@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyjapt"
-version = "0.1.5"
+version = "0.1.6"
 description = "Just Another Parsing Tool Writ ten in Python"
 authors = ["Alejandro Klever <alejandroklever4197@gmail.com>"]
 readme = "README.md"
