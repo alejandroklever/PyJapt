@@ -79,7 +79,7 @@ class LRParserSerializer:
 class LexerSerializer:
     @staticmethod
     def build(lexer, lexer_class_name, grammar_module_name, grammar_variable_name):
-        pattern = lexer.pattern
+        pattern = lexer.pattern.pattern
 
         token_rules = f"{{key: rule for key, (_, _, rule) in {grammar_variable_name}.terminal_rules.items() if rule " \
                       f"is not None}}"
