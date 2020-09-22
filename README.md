@@ -242,7 +242,7 @@ def attribute_error(s):
     # With this line we report the error message
     # As the semantic rule of s[5] is the token itself (because it is a terminal error), so we have access
     # to your their, token type, line and column.
-    s.set_error(5, f"{s[5].line, s[5].column} - SyntacticError: Expected ';' instead of '{s[5].lex}'")
+    s.add_error(5, f"{s[5].line, s[5].column} - SyntacticError: Expected ';' instead of '{s[5].lex}'")
 
     # With this line we allow to continue creating a node of the ast to
     # be able to detect semantic errors despite syntactic errors
@@ -262,7 +262,7 @@ def comment_eof_error(lexer):
             lexer.column = 0
         lexer.column = 1
     lexer.position += len(lex)
-    lexer.set_error(f'{lexer.lineno, lexer.column} -LexicographicError: EOF in comment')
+    lexer.add_error(f'{lexer.lineno, lexer.column} -LexicographicError: EOF in comment')
 ```
 
 And to report general errors during the tokenization process we can use the `lexical_error` decorator.
@@ -270,7 +270,7 @@ And to report general errors during the tokenization process we can use the `lex
 ```python
 @g.lexical_error
 def lexical_error(lexer):
-    lexer.set_error(lexer.line, lexer.column, f'{lexer.lineno, lexer.column} -LexicographicError: ERROR "{lexer.token.lex}"')
+    lexer.add_error(lexer.line, lexer.column, f'{lexer.lineno, lexer.column} -LexicographicError: ERROR "{lexer.token.lex}"')
     lexer.column += len(lexer.token.lex)
     lexer.position += len(lexer.token.lex)
 ```

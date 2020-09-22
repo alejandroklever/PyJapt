@@ -608,7 +608,7 @@ class Item:
 
 
 class RuleList:
-    def __init__(self, parser, rules):
+    def __init__(self, parser: 'ShiftReduceParser', rules: list):
         self.__parser = parser
         self.__list = rules
 
@@ -624,8 +624,8 @@ class RuleList:
     def __len__(self):
         return len(self.__list)
 
-    def set_error(self, index: int, message: str):
-        self.__parser.set_error(self[index].line, self[index].column, message)
+    def add_error(self, index: int, message: str):
+        self.__parser.add_error(self[index].line, self[index].column, message)
 
 
 ##############################
@@ -960,7 +960,7 @@ class ShiftReduceParser:
     def errors(self, clean: bool = True):
         return [(m if clean else (r, c, m)) for r, c, m in sorted(self._errors)]
 
-    def set_error(self, line, column, message):
+    def add_error(self, line, column, message):
         self._errors.append((line, column, message))
 
     #############
