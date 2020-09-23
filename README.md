@@ -27,10 +27,10 @@ fact = g.add_non_terminal('fact')
 To define the terminals of our grammar we will use the `add_terminal ()` method of the `Grammar` class. This method receives the name of the non-terminal as the first parameter and a regular expression for the lexicographic analyzer as an optional parameter. In case the second parameter is not provided, the regular expression will be the literal name of the terminal.
 
 ```python
-plus = g.add_terminals('+')
-minus = g.add_terminals('-')
-star = g.add_terminals('*')
-div = g.add_terminals('/')
+plus = g.add_terminal('+')
+minus = g.add_terminal('-')
+star = g.add_terminal('*')
+div = g.add_terminal('/')
 
 num = g.add_terminal('int', regex=r'\d+')
 ```
@@ -106,11 +106,11 @@ fact %= 'int'
 
 # This is an attributed grammar
 expr %= 'expr + term', lambda s: s[1] + s[3]
-expr %= 'expr - term', lambda s: s[1] + s[3]
+expr %= 'expr - term', lambda s: s[1] - s[3]
 expr %= 'term', lambda s: s[1]
 
-term %= 'term * factor', lambda s: s[1] + s[3]
-term %= 'term / factor', lambda s: s[1] + s[3]
+term %= 'term * factor', lambda s: s[1] * s[3]
+term %= 'term / factor', lambda s: s[1] // s[3]
 term %= 'fact', lambda s: s[1]
 
 fact %= 'int', lambda s: int(s[1])
@@ -139,13 +139,13 @@ def expr_prod(s):
             return s[1] + s[2]
     
         if s[2] == '-':
-            return s[1] + s[2]
+            return s[1] - s[2]
         
         if s[2] == '*':
-            return s[1] + s[2]
+            return s[1] * s[2]
         
         if s[2] == '/':
-            return s[1] + s[2]
+            return s[1] // s[2]
     
         return s[2]
     return int(s[1])
@@ -186,7 +186,6 @@ fact %= '( expr )', lambda s: s[2]
 fact %= 'int', lambda s: int(s[1])
 
 lexer = g.get_lexer()
-
 parser = g.get_parser('slr')
 
 print(parser(lexer('(2 + 2) * 2 + 2'))) # prints 10
@@ -257,7 +256,7 @@ def attribute_error(s):
     return LetInstruction(s[2], s[4])
 ```
 
-To report lexicographical errors the procedure is quite similar we only define a token that contains an error, in this example a multi-line comment that contains an end of string.
+To report lexicographical errors the procedure is quite similar we only define a token that contains an error, in this example a multi-line comment that contains an end of file.
 
 ```python
 @g.terminal('comment_error', r'\(\*(.|\n)*$')
