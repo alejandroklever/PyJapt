@@ -50,6 +50,7 @@ class Lexer:
         self.lineno: int = 1  # Current line number
         self.column: int = 1  # Current column in the line
         self.position: int = 0  # Current position in recognition
+        self.text = ''  # current text
         self.token: Token = Token('', '', 0, 0)  # Current token in recognition
         self.pattern: Pattern = self._build_regex(table)
         self.token_rules = token_rules  # type: Dict[str, Callable[['Lexer'], Optional[Token]]]
@@ -59,6 +60,7 @@ class Lexer:
         self._errors: List[Tuple[int, int, str]] = []
 
     def tokenize(self, text: str) -> Generator[Token, None, None]:
+        self.text = text
         while self.position < len(text):
             match = self.pattern.match(text, pos=self.position)
 
