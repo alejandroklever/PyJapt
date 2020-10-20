@@ -56,7 +56,7 @@ class Lexer:
         self.contain_errors: bool = False
         self.error_handler = error_handler if error_handler is not None else self.error
         self.eof: str = eof
-        self.errors: List[Tuple[int, int, str]] = []
+        self._errors: List[Tuple[int, int, str]] = []
 
     def tokenize(self, text: str) -> Generator[Token, None, None]:
         while self.position < len(text):
@@ -84,12 +84,16 @@ class Lexer:
             self.column += len(match.group())
         yield Token('$', self.eof, self.lineno, self.column)
 
-    def set_error(self, line: int, col: int, error_msg: str):
-        self.errors.append((line, col, error_msg))
+    @property
+    def errors(self, clean: bool = True):
+        return [(m if clean else (r, c, m)) for r, c, m in sorted(self._errors)]
+
+    def add_error(self, line: int, col: int, error_msg: str):
+        self._errors.append((line, col, error_msg))
 
     @staticmethod
     def error(lexer: 'Lexer') -> None:
-        lexer.set_error(lexer.token.line, lexer.token.column, f'LexerError: Unexpected symbol "{lexer.token.lex}"')
+        lexer.add_error(lexer.token.line, lexer.token.column, f'LexerError: Unexpected symbol "{lexer.token.lex}"')
         lexer.position += len(lexer.token.lex)
         lexer.column += len(lexer.token.lex)
 
