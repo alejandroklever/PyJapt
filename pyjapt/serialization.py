@@ -35,6 +35,7 @@ class %s(Lexer):
         self.pattern = re.compile(r'%s')
         self.token_rules = %s
         self.error_handler = %s
+        self._errors = []
         self.contain_errors = False
         self.eof = '%s'
     
