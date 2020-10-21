@@ -1054,7 +1054,7 @@ class ShiftReduceParser:
                     self.add_error(
                         lookahead.line,
                         lookahead.column,
-                        f'{lookahead.line, lookahead.column} - SyntacticError: ERROR at or near "{lookahead.lex}"\n')
+                        f'{lookahead.line, lookahead.column} - SyntacticError: ERROR at or near "{lookahead.lex}"')
 
                     while (state, lookahead.token_type) not in self.action:
                         cursor += 1
