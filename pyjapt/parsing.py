@@ -1051,7 +1051,9 @@ class ShiftReduceParser:
                     lookahead = Token(lookahead.lex, self.grammar.ERROR, lookahead.line, lookahead.column)
                 else:
                     # If an error insertion fails then the parsing process enter into a panic mode recovery
-                    sys.stderr.write(
+                    self.add_error(
+                        lookahead.line,
+                        lookahead.column,
                         f'{lookahead.line, lookahead.column} - SyntacticError: ERROR at or near "{lookahead.lex}"\n')
 
                     while (state, lookahead.token_type) not in self.action:
