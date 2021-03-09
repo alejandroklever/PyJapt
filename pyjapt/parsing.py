@@ -282,6 +282,7 @@ class Grammar:
         self.EOF: EOF = EOF(self)
 
         self.lexical_error_handler = None  # type: Optional[Callable[[Lexer], None]]
+        self.parsing_error_handler = None  # type: Optional[Callable[[ShiftReduceParser], str]]
         self.terminal_rules = {}  # type: Dict[str, Tuple[str, bool, Optional[Callable[[Lexer], Optional[Token]]]]]
         self.production_dict = {}  # type: Dict[str, Production]
         self.symbol_dict = {'$': self.EOF, 'error': self.ERROR}  # type: Dict[str, Symbol]
@@ -408,6 +409,10 @@ class Grammar:
         self.lexical_error_handler = handler
         return handler
 
+    def parsing_error(self, handler: Callable[['ShiftReduceParser'], str]):
+        self.parsing_error_handler = handler
+        return handler
+
     def augmented_grammar(self, force: bool = False):
         if not self.is_augmented_grammar or force:
             grammar = self.copy()
@@ -443,9 +448,9 @@ class Grammar:
         literal_tokens = sorted(f3, key=lambda x: len(x[1][0]), reverse=True)
 
         table = (
-                [(name, regex) for name, (regex, _, _) in ruled_tokens] +
-                [(name, regex) for name, (regex, _, _) in not_literal_tokens] +
-                [(None, regex) for _, (regex, _, _) in literal_tokens]
+            [(name, regex) for name, (regex, _, _) in ruled_tokens] +
+            [(name, regex) for name, (regex, _, _) in not_literal_tokens] +
+            [(None, regex) for _, (regex, _, _) in literal_tokens]
         )
 
         return Lexer(
@@ -928,12 +933,14 @@ def build_lalr1_automaton(grammar, firsts=None):
 # SLR & LR1 & LALR1 Parsers #
 #############################
 class ShiftReduceParser:
-    SHIFT = 'SHIFT'
-    REDUCE = 'REDUCE'
-    OK = 'OK'
-    contains_errors = False
+    SHIFT: str = 'SHIFT'
+    REDUCE: str = 'REDUCE'
+    OK: str = 'OK'
+    contains_errors: bool = False
+    current_token: Optional[Token] = None
 
-    def __init__(self, grammar: Grammar, verbose: bool = False):
+    def __init__(self, grammar: Grammar, verbose: bool = False,
+                 error_handler: Optional[Callable[['ShiftReduceParser'], None]] = None):
         self.grammar = grammar
         self.augmented_grammar = grammar.augmented_grammar(True)
         self.firsts = compute_firsts(self.augmented_grammar)
@@ -953,6 +960,9 @@ class ShiftReduceParser:
             sys.stderr.write(f"Warning: {self.shift_reduce_count} Shift-Reduce Conflicts\n")
             sys.stderr.write(f"Warning: {self.reduce_reduce_count} Reduce-Reduce Conflicts\n")
 
+        self.error_handler: Optional[Callable[['ShiftReduceParser'], str]] = error_handler if \
+            error_handler is not None else self.error
+
     ##############
     # Errors API #
     ##############
@@ -960,9 +970,17 @@ class ShiftReduceParser:
     def errors(self, clean: bool = True):
         return [(m if clean else (r, c, m)) for r, c, m in sorted(self._errors)]
 
-    def add_error(self, line, column, message):
+    def add_error(self, line: int, column: int, message: str):
         self._errors.append((line, column, message))
 
+    @staticmethod
+    def error(parser: 'ShiftReduceParser'):
+        parser.add_error(
+            parser.current_token.line,
+            parser.current_token.column,
+            f'Parsing Error at "{parser.current_token.lex}" in line "{parser.current_token.line}" and column'
+            f' "{parser.current_token.column}"'
+        )
     #############
     #    End    #
     #############
@@ -1025,7 +1043,7 @@ class ShiftReduceParser:
                 return
 
             state = stack[-1]
-            lookahead = tokens[cursor]
+            self.current_token = lookahead = tokens[cursor]
 
             if isinstance(lookahead.token_type, str):
                 # making the token_type always a terminal
@@ -1051,11 +1069,7 @@ class ShiftReduceParser:
                     lookahead = Token(lookahead.lex, self.grammar.ERROR, lookahead.line, lookahead.column)
                 else:
                     # If an error insertion fails then the parsing process enter into a panic mode recovery
-                    self.add_error(
-                        lookahead.line,
-                        lookahead.column,
-                        f'{lookahead.line, lookahead.column} - SyntacticError: ERROR at or near "{lookahead.lex}"')
-
+                    self.error_handler(self)
                     while (state, lookahead.token_type) not in self.action:
                         cursor += 1
                         if cursor >= len(tokens):

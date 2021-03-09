@@ -95,7 +95,12 @@ class Lexer:
 
     @staticmethod
     def error(lexer: 'Lexer') -> None:
-        lexer.add_error(lexer.token.line, lexer.token.column, f'LexerError: Unexpected symbol "{lexer.token.lex}"')
+        lexer.add_error(
+            lexer.token.line,
+            lexer.token.column,
+            f'Tokenization error: unexpected symbol "{lexer.token.lex}" '
+            f'at line "{lexer.token.line}" and column "{lexer.token.column}"'
+        )
         lexer.position += len(lexer.token.lex)
         lexer.column += len(lexer.token.lex)
 

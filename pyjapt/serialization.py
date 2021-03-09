@@ -10,6 +10,7 @@ class %s(ShiftReduceParser, ABC):
         self.action = self.__action_table()
         self.goto = self.__goto_table()
         self._errors = []
+        self.error_handler = %s
 
     @staticmethod
     def __action_table():
@@ -48,8 +49,12 @@ class LRParserSerializer:
     @staticmethod
     def build(parser, parser_class_name, grammar_module_name, grammar_variable_name):
         action, goto = LRParserSerializer._build_parsing_tables(parser, grammar_variable_name)
+
+        error_handler = f"{grammar_variable_name}.parsing_error_handler if " \
+                        f"{grammar_variable_name}.parsing_error_handler is not None else self.error "
+
         content = PARSER_TEMPLATE % (grammar_module_name, grammar_variable_name, parser_class_name,
-                                     grammar_variable_name, action, goto)
+                                     grammar_variable_name, error_handler, action, goto)
         try:
             with open('parsertab.py', 'x') as f:
                 f.write(content)
