@@ -1,7 +1,7 @@
 import json
 import re
 import sys
-from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict, Set
+from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict, Set, Union
 
 from pyjapt.automata import State
 from pyjapt.lexing import Lexer, Token
@@ -282,7 +282,7 @@ class Grammar:
         self.EOF: EOF = EOF(self)
 
         self.lexical_error_handler = None  # type: Optional[Callable[[Lexer], None]]
-        self.parsing_error_handler = None  # type: Optional[Callable[[ShiftReduceParser], str]]
+        self.parsing_error_handler = None  # type: Optional[Callable[[ShiftReduceParser], None]]
         self.terminal_rules = {}  # type: Dict[str, Tuple[str, bool, Optional[Callable[[Lexer], Optional[Token]]]]]
         self.production_dict = {}  # type: Dict[str, Production]
         self.symbol_dict = {'$': self.EOF, 'error': self.ERROR}  # type: Dict[str, Symbol]
@@ -409,7 +409,7 @@ class Grammar:
         self.lexical_error_handler = handler
         return handler
 
-    def parsing_error(self, handler: Callable[['ShiftReduceParser'], str]):
+    def parsing_error(self, handler: Callable[['ShiftReduceParser'], None]):
         self.parsing_error_handler = handler
         return handler
 
@@ -629,8 +629,23 @@ class RuleList:
     def __len__(self):
         return len(self.__list)
 
-    def add_error(self, index: int, message: str):
-        self.__parser.add_error(self[index].line, self[index].column, message)
+    def force_parsing_error(self):
+        self.__parser.contains_errors = True
+
+    def add_error(self, index: Union[int, Tuple[int, int]], message: str):
+        """
+        **Parameters**
+
+        index:
+        If `index` is an `int` then it represents the index of the token where the error is happening.
+        If `index` is a `tuple[int, int]` it represents de line and the column where the error is happening.
+
+        message: Is a `str` with the error message
+        """
+        if isinstance(index, int):
+            self.__parser.add_error(self[index].line, self[index].column, message)
+        else:
+            self.__parser.add_error(index[0], index[1], message)
 
 
 ##############################
@@ -981,6 +996,7 @@ class ShiftReduceParser:
             f'Parsing Error at "{parser.current_token.lex}" in line "{parser.current_token.line}" and column'
             f' "{parser.current_token.column}"'
         )
+
     #############
     #    End    #
     #############
@@ -1046,7 +1062,7 @@ class ShiftReduceParser:
             self.current_token = lookahead = tokens[cursor]
 
             if isinstance(lookahead.token_type, str):
-                # making the token_type always a terminal
+                # Making the token_type always a terminal
                 lookahead.token_type = self.grammar[lookahead.token_type]
 
             if self.verbose:

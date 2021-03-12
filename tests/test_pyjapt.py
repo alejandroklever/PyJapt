@@ -1,4 +1,5 @@
 from pyjapt import Grammar
+from pyjapt.parsing import RuleList
 
 
 def parse_arithmetic_expression(text: str):
@@ -12,6 +13,10 @@ def parse_arithmetic_expression(text: str):
     def whitespace(_lexer):
         _lexer.column += len(_lexer.token.lex)
         _lexer.position += len(_lexer.token.lex)
+
+    @g.production('expr -> ')
+    def empty_expression(s: RuleList):
+        s.force_parsing_error()
 
     expr %= 'expr + term', lambda s: s[1] + s[3]
     expr %= 'expr - term', lambda s: s[1] - s[3]
@@ -91,6 +96,7 @@ def test_arithmetic_grammar():
         ('1 + 2 * 5 - 4', 7),
         ('(1 - 2 + 45) * 3 / 2', 66),
         ('(2 + 2) * 2 + 2', 10),
+        ('', None)
     ]
     for text, result in tests:
         assert parse_arithmetic_expression(text) == result, 'Bad Parsing'
