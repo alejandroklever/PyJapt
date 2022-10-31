@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "pyjapt"
-version = "0.3.0"
-description = "Just Another Parsing Tool Writ ten in Python"
-authors = ["Alejandro Klever <alejandroklever4197@gmail.com>"]
+version = "0.3.5"
+description = "Just Another Parsing Tool Written in Python"
+authors = ["Alejandro Klever <alejandroklever.workon@gmail.com>"]
 readme = "README.md"
 homepage = "https://github.com/alejandroklever/PyJapt"
 exclude = ["tests/excluded.py"]
