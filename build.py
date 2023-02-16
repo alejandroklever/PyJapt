@@ -6,7 +6,7 @@ with open("pyjapt/__init__.py", "r") as f:
     version = (
         re.search(r"__version__ = \"\d\.\d\.\d\"", f.read())
         .group()
-        .replace("__version__ = \"", "")[:-1]
+        .replace('__version__ = "', "")[:-1]
     )
 
 with open("pyproject.toml", "r") as f:
@@ -19,4 +19,3 @@ with open("pyproject.toml", "w") as f:
     f.write(s)
 
 os.system("poetry build")
-

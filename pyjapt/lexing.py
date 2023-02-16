@@ -35,7 +35,7 @@ class Token:
     @property
     def is_valid(self):
         return True
-    
+
     @staticmethod
     def empty() -> "Token":
         return Token("", "", 0, 0)
@@ -58,7 +58,7 @@ class Lexer:
         self.lineno: int = 1  # Current line number
         self.column: int = 1  # Current column in the line
         self.position: int = 0  # Current position in recognition
-        self.text = ""  # current text
+        self.text: str = ""  # current text
         self.token: Token = Token.empty()  # Current token in recognition
         self.pattern: Pattern = self._build_regex(table)
         self.token_rules = (
