@@ -284,4 +284,4 @@ def lexical_error(lexer):
 
 ## Credits 
 
-For each recommendation or bug please write to alejandroklever.workon@gmail.com.
+For each recommendation or bug please write to alejandroklever@alejandroklever.dev.
