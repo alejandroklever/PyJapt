@@ -48,37 +48,48 @@ class %s(Lexer):
 class LRParserSerializer:
     @staticmethod
     def build(parser, parser_class_name, grammar_module_name, grammar_variable_name):
-        action, goto = LRParserSerializer._build_parsing_tables(parser, grammar_variable_name)
+        action, goto = LRParserSerializer._build_parsing_tables(
+            parser, grammar_variable_name
+        )
 
-        error_handler = f"{grammar_variable_name}.parsing_error_handler if " \
-                        f"{grammar_variable_name}.parsing_error_handler is not None else self.error "
+        error_handler = (
+            f"{grammar_variable_name}.parsing_error_handler if "
+            f"{grammar_variable_name}.parsing_error_handler is not None else self.error "
+        )
 
-        content = PARSER_TEMPLATE % (grammar_module_name, grammar_variable_name, parser_class_name,
-                                     grammar_variable_name, error_handler, action, goto)
+        content = PARSER_TEMPLATE % (
+            grammar_module_name,
+            grammar_variable_name,
+            parser_class_name,
+            grammar_variable_name,
+            error_handler,
+            action,
+            goto,
+        )
         try:
-            with open('parsertab.py', 'x') as f:
+            with open("parsertab.py", "x") as f:
                 f.write(content)
         except FileExistsError:
-            with open('parsertab.py', 'w') as f:
+            with open("parsertab.py", "w") as f:
                 f.write(content)
 
     @staticmethod
     def _build_parsing_tables(parser, variable_name):
-        s1 = '{\n'
+        s1 = "{\n"
         for (state, symbol), (act, tag) in parser.action.items():
             s1 += f'            ({state}, {variable_name}["{symbol}"]): '
 
-            if act == 'SHIFT':
+            if act == "SHIFT":
                 s1 += f'("{act}", {tag}),\n'
-            elif act == 'REDUCE':
+            elif act == "REDUCE":
                 s1 += f'("{act}", {variable_name}["{repr(tag)}"]),\n'
             else:
                 s1 += f'("{act}", None),\n'
-        s1 += '        }'
-        s2 = '{\n'
+        s1 += "        }"
+        s2 = "{\n"
         for (state, symbol), dest in parser.goto.items():
             s2 += f'            ({state}, {variable_name}["{symbol}"]): {dest},\n'
-        s2 += '        }'
+        s2 += "        }"
 
         return s1, s2
 
@@ -88,23 +99,35 @@ class LexerSerializer:
     def build(lexer, lexer_class_name, grammar_module_name, grammar_variable_name):
         pattern = lexer.pattern.pattern
 
-        token_rules = f"{{key: rule for key, (_, _, rule) in {grammar_variable_name}.terminal_rules.items() if rule " \
-                      f"is not None}}"
+        token_rules = (
+            f"{{key: rule for key, (_, _, rule) in {grammar_variable_name}.terminal_rules.items() if rule "
+            f"is not None}}"
+        )
 
-        error_handler = f"{grammar_variable_name}.lexical_error_handler if " \
-                        f"{grammar_variable_name}.lexical_error_handler is not None else self.error "
+        error_handler = (
+            f"{grammar_variable_name}.lexical_error_handler if "
+            f"{grammar_variable_name}.lexical_error_handler is not None else self.error "
+        )
 
-        call_return = f"[Token(t.lex, {grammar_variable_name}[t.token_type], t.line, t.column) for t in " \
-                      f"self.tokenize(text)] "
+        call_return = (
+            f"[Token(t.lex, {grammar_variable_name}[t.token_type], t.line, t.column) for t in "
+            f"self.tokenize(text)] "
+        )
 
         content = LEXER_TEMPLATE % (
-            grammar_module_name, grammar_variable_name, lexer_class_name, pattern, token_rules, error_handler,
-            lexer.eof, call_return,
+            grammar_module_name,
+            grammar_variable_name,
+            lexer_class_name,
+            pattern,
+            token_rules,
+            error_handler,
+            lexer.eof,
+            call_return,
         )
 
         try:
-            with open('lexertab.py', 'x') as f:
+            with open("lexertab.py", "x") as f:
                 f.write(content)
         except FileExistsError:
-            with open('lexertab.py', 'w') as f:
+            with open("lexertab.py", "w") as f:
                 f.write(content)

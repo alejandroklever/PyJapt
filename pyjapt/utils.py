@@ -45,7 +45,7 @@ class ContainerSet:
         return len(self.set) + int(self.contains_epsilon)
 
     def __str__(self):
-        return '%s-%s' % (str(self.set), self.contains_epsilon)
+        return "%s-%s" % (str(self.set), self.contains_epsilon)
 
     def __repr__(self):
         return str(self)
@@ -59,6 +59,8 @@ class ContainerSet:
     def __eq__(self, other):
         if isinstance(other, set):
             return self.set == other
-        return (isinstance(other, ContainerSet) and
-                self.set == other.set and
-                self.contains_epsilon == other.contains_epsilon)
+        return (
+            isinstance(other, ContainerSet)
+            and self.set == other.set
+            and self.contains_epsilon == other.contains_epsilon
+        )

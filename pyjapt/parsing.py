@@ -1,7 +1,17 @@
 import json
 import re
 import sys
-from typing import List, FrozenSet, Optional, Tuple, Iterable, Callable, Dict, Set, Union
+from typing import (
+    List,
+    FrozenSet,
+    Optional,
+    Tuple,
+    Iterable,
+    Callable,
+    Dict,
+    Set,
+    Union,
+)
 
 from pyjapt.automata import State
 from pyjapt.lexing import Lexer, Token
@@ -9,7 +19,7 @@ from pyjapt.serialization import LRParserSerializer, LexerSerializer
 from pyjapt.utils import ContainerSet
 
 TerminalRule = Callable[[Lexer], Optional[Token]]
-ProductionRule = Callable[['RuleList'], object]
+ProductionRule = Callable[["RuleList"], object]
 
 
 class GrammarError(Exception):
@@ -19,9 +29,9 @@ class GrammarError(Exception):
 
 
 class Symbol:
-    def __init__(self, name: str, grammar: Optional['Grammar']):
+    def __init__(self, name: str, grammar: Optional["Grammar"]):
         self.name: str = name
-        self.grammar: 'Grammar' = grammar
+        self.grammar: "Grammar" = grammar
 
     @property
     def is_epsilon(self) -> bool:
@@ -57,15 +67,17 @@ class Symbol:
 
 
 class NonTerminal(Symbol):
-    def __init__(self, name: str, grammar: 'Grammar'):
+    def __init__(self, name: str, grammar: "Grammar"):
         super().__init__(name, grammar)
-        self.productions: List['Production'] = []
-        self.error_productions: List['Production'] = []
+        self.productions: List["Production"] = []
+        self.error_productions: List["Production"] = []
 
-    def __mod__(self, other) -> 'NonTerminal':
+    def __mod__(self, other) -> "NonTerminal":
         if isinstance(other, str):
             if other:
-                p = Production(self, Sentence(*(self.grammar[s] for s in other.split())))
+                p = Production(
+                    self, Sentence(*(self.grammar[s] for s in other.split()))
+                )
             else:
                 p = Production(self, self.grammar.EPSILON)
             self.grammar.add_production(p)
@@ -86,7 +98,10 @@ class NonTerminal(Symbol):
 
             if isinstance(other[0], str):
                 if other[0]:
-                    other = Sentence(*(self.grammar[s] for s in other[0].split())), other[1]
+                    other = (
+                        Sentence(*(self.grammar[s] for s in other[0].split())),
+                        other[1],
+                    )
                 else:
                     other = self.grammar.EPSILON, other[1]
 
@@ -96,7 +111,9 @@ class NonTerminal(Symbol):
             if isinstance(other[0], Sentence):
                 p = Production(self, other[0], other[1])
             else:
-                raise TypeError("Valid types for a production are 'Symbol', 'Sentence' or 'str'")
+                raise TypeError(
+                    "Valid types for a production are 'Symbol', 'Sentence' or 'str'"
+                )
 
             self.grammar.add_production(p)
             return self
@@ -115,7 +132,7 @@ class NonTerminal(Symbol):
 
 
 class Terminal(Symbol):
-    def __init__(self, name: str, grammar: 'Grammar'):
+    def __init__(self, name: str, grammar: "Grammar"):
         super().__init__(name, grammar)
 
     @property
@@ -125,17 +142,17 @@ class Terminal(Symbol):
 
 class PropagationTerminal(Symbol):
     def __init__(self):
-        super().__init__('#', None)
+        super().__init__("#", None)
 
 
 class ErrorTerminal(Terminal):
-    def __init__(self, grammar: 'Grammar'):
-        super().__init__('error', grammar)
+    def __init__(self, grammar: "Grammar"):
+        super().__init__("error", grammar)
 
 
 class EOF(Terminal):
-    def __init__(self, grammar: 'Grammar'):
-        super().__init__('$', grammar)
+    def __init__(self, grammar: "Grammar"):
+        super().__init__("$", grammar)
 
 
 class Sentence:
@@ -146,7 +163,7 @@ class Sentence:
     def __len__(self):
         return len(self.symbols)
 
-    def __add__(self, other) -> 'Sentence':
+    def __add__(self, other) -> "Sentence":
         if isinstance(other, Symbol):
             return Sentence(*(self.symbols + (other,)))
 
@@ -155,7 +172,7 @@ class Sentence:
 
         raise TypeError(other)
 
-    def __or__(self, other) -> 'SentenceList':
+    def __or__(self, other) -> "SentenceList":
         if isinstance(other, Sentence):
             return SentenceList(self, other)
 
@@ -213,14 +230,14 @@ class SentenceList:
 
 
 class Epsilon(Terminal, Sentence):
-    def __init__(self, grammar: 'Grammar'):
-        super().__init__('epsilon', grammar)
+    def __init__(self, grammar: "Grammar"):
+        super().__init__("epsilon", grammar)
 
     def __str__(self):
         return "e"
 
     def __repr__(self):
-        return 'epsilon'
+        return "epsilon"
 
     def __iter__(self):
         yield from ()
@@ -243,28 +260,36 @@ class Epsilon(Terminal, Sentence):
 
 
 class Production:
-    def __init__(self, non_terminal: NonTerminal, sentence: Sentence,
-                 rule: Optional[Callable[['RuleList'], object]] = None):
+    def __init__(
+        self,
+        non_terminal: NonTerminal,
+        sentence: Sentence,
+        rule: Optional[Callable[["RuleList"], object]] = None,
+    ):
         self.left: NonTerminal = non_terminal
         self.right: Sentence = sentence
-        self.rule: Optional[Callable[['RuleList'], object]] = rule
+        self.rule: Optional[Callable[["RuleList"], object]] = rule
 
     @property
     def is_epsilon(self) -> bool:
         return self.right.is_epsilon
 
     def __str__(self):
-        return '%s -> %s' % (self.left, self.right)
+        return "%s -> %s" % (self.left, self.right)
 
     def __repr__(self):
-        return '%s -> %s' % (self.left, self.right)
+        return "%s -> %s" % (self.left, self.right)
 
     def __iter__(self):
         yield self.left
         yield self.right
 
     def __eq__(self, other):
-        return isinstance(other, Production) and self.left == other.left and self.right == other.right
+        return (
+            isinstance(other, Production)
+            and self.left == other.left
+            and self.right == other.right
+        )
 
     def __hash__(self):
         return hash((self.left, self.right))
@@ -282,12 +307,21 @@ class Grammar:
         self.EOF: EOF = EOF(self)
 
         self.lexical_error_handler = None  # type: Optional[Callable[[Lexer], None]]
-        self.parsing_error_handler = None  # type: Optional[Callable[[ShiftReduceParser], None]]
-        self.terminal_rules = {}  # type: Dict[str, Tuple[str, bool, Optional[Callable[[Lexer], Optional[Token]]]]]
+        self.parsing_error_handler = (
+            None
+        )  # type: Optional[Callable[[ShiftReduceParser], None]]
+        self.terminal_rules = (
+            {}
+        )  # type: Dict[str, Tuple[str, bool, Optional[Callable[[Lexer], Optional[Token]]]]]
         self.production_dict = {}  # type: Dict[str, Production]
-        self.symbol_dict = {'$': self.EOF, 'error': self.ERROR}  # type: Dict[str, Symbol]
+        self.symbol_dict = {
+            "$": self.EOF,
+            "error": self.ERROR,
+        }  # type: Dict[str, Symbol]
 
-    def add_terminal(self, name: str, regex: str = None, rule: Optional[TerminalRule] = None) -> Terminal:
+    def add_terminal(
+        self, name: str, regex: str = None, rule: Optional[TerminalRule] = None
+    ) -> Terminal:
         """
         Create a terminal for the grammar with its respective regular expression
 
@@ -313,7 +347,9 @@ class Grammar:
         if not name:
             raise Exception("Empty name")
 
-        assert name not in self.symbol_dict, f'Terminal {name} already defined in grammar'
+        assert (
+            name not in self.symbol_dict
+        ), f"Terminal {name} already defined in grammar"
 
         literal = False
         if regex is None:
@@ -347,7 +383,9 @@ class Grammar:
         if not name:
             raise Exception("Empty name")
 
-        assert name not in self.symbol_dict, f'Non-Terminal {name} already defined in grammar'
+        assert (
+            name not in self.symbol_dict
+        ), f"Non-Terminal {name} already defined in grammar"
 
         term = NonTerminal(name, self)
 
@@ -369,7 +407,9 @@ class Grammar:
         self.productions.append(production)
         self.production_dict[repr(production)] = production
 
-    def production(self, *productions: str) -> Callable[[ProductionRule], ProductionRule]:
+    def production(
+        self, *productions: str
+    ) -> Callable[[ProductionRule], ProductionRule]:
         """
         Return a function to decorate a method that will be used for as production rule
 
@@ -381,7 +421,7 @@ class Grammar:
 
         def decorator(rule: ProductionRule) -> ProductionRule:
             for production in productions:
-                head, body = production.split('->')
+                head, body = production.split("->")
                 head = self[head.strip()]
                 head %= body.strip(), rule
             return rule
@@ -409,7 +449,7 @@ class Grammar:
         self.lexical_error_handler = handler
         return handler
 
-    def parsing_error(self, handler: Callable[['ShiftReduceParser'], None]):
+    def parsing_error(self, handler: Callable[["ShiftReduceParser"], None]):
         self.parsing_error_handler = handler
         return handler
 
@@ -418,7 +458,7 @@ class Grammar:
             grammar = self.copy()
             start_symbol = grammar.start_symbol
             grammar.start_symbol = None
-            new_start_symbol = grammar.add_non_terminal('S\'', True)
+            new_start_symbol = grammar.add_non_terminal("S'", True)
             new_start_symbol %= start_symbol + grammar.EPSILON, lambda x: x
             return grammar
         else:
@@ -448,36 +488,53 @@ class Grammar:
         literal_tokens = sorted(f3, key=lambda x: len(x[1][0]), reverse=True)
 
         table = (
-            [(name, regex) for name, (regex, _, _) in ruled_tokens] +
-            [(name, regex) for name, (regex, _, _) in not_literal_tokens] +
-            [(None, regex) for _, (regex, _, _) in literal_tokens]
+            [(name, regex) for name, (regex, _, _) in ruled_tokens]
+            + [(name, regex) for name, (regex, _, _) in not_literal_tokens]
+            + [(None, regex) for _, (regex, _, _) in literal_tokens]
         )
 
         return Lexer(
             table,
             self.EOF.name,
             {s: r for s, (_, _, r) in items if r is not None},
-            self.lexical_error_handler
+            self.lexical_error_handler,
         )
 
     def get_parser(self, name: str, verbose: bool = False):
-        if name == 'slr':
+        if name == "slr":
             return SLRParser(self, verbose)
 
-        if name == 'lalr1':
+        if name == "lalr1":
             return LALR1Parser(self, verbose)
 
-        if name == 'lr1':
+        if name == "lr1":
             return LR1Parser(self, verbose)
 
         raise ValueError(name)  # TODO: create a custom error
 
-    def serialize_lexer(self, class_name: str, grammar_module_name: str, grammar_variable_name: str = 'G'):
-        LexerSerializer.build(self.get_lexer(), class_name, grammar_module_name, grammar_variable_name)
+    def serialize_lexer(
+        self,
+        class_name: str,
+        grammar_module_name: str,
+        grammar_variable_name: str = "G",
+    ):
+        LexerSerializer.build(
+            self.get_lexer(), class_name, grammar_module_name, grammar_variable_name
+        )
 
-    def serialize_parser(self, parser_type: str, class_name: str, grammar_module_name: str,
-                         grammar_variable_name: str = 'G'):
-        LRParserSerializer.build(self.get_parser(parser_type), class_name, grammar_module_name, grammar_variable_name)
+    def serialize_parser(
+        self,
+        parser_type: str,
+        class_name: str,
+        grammar_module_name: str,
+        grammar_variable_name: str = "G",
+    ):
+        LRParserSerializer.build(
+            self.get_parser(parser_type),
+            class_name,
+            grammar_module_name,
+            grammar_variable_name,
+        )
 
     @property
     def is_augmented_grammar(self):
@@ -502,11 +559,13 @@ class Grammar:
             for s in p.right:
                 body.append(s.Name)
 
-            productions.append({'Head': head, 'Body': body})
+            productions.append({"Head": head, "Body": body})
 
-        d = {'NonTerminals': [symbol.name for symbol in self.non_terminals],
-             'Terminals': [symbol.name for symbol in self.terminals],
-             'Productions': productions}
+        d = {
+            "NonTerminals": [symbol.name for symbol in self.non_terminals],
+            "Terminals": [symbol.name for symbol in self.terminals],
+            "Productions": productions,
+        }
 
         # [{'Head':p.Left.Name, "Body": [s.Name for s in p.Right]} for p in self.Productions]
         return json.dumps(d)
@@ -516,17 +575,17 @@ class Grammar:
         data = json.loads(data)
 
         grammar = Grammar()
-        dic = {'epsilon': grammar.EPSILON}
+        dic = {"epsilon": grammar.EPSILON}
 
-        for term in data['Terminals']:
+        for term in data["Terminals"]:
             dic[term] = grammar.add_terminal(term)
 
-        for noTerm in data['NonTerminals']:
+        for noTerm in data["NonTerminals"]:
             dic[noTerm] = grammar.add_non_terminal(noTerm)
 
-        for p in data['Productions']:
-            head = p['Head']
-            dic[head] %= Sentence(*[dic[term] for term in p['Body']])
+        for p in data["Productions"]:
+            head = p["Head"]
+            dic[head] %= Sentence(*[dic[term] for term in p["Body"]])
 
         return grammar
 
@@ -540,20 +599,22 @@ class Grammar:
             return None
 
     def __str__(self):
-        mul = '%s, '
-        ans = 'Non-Terminals:\n\t'
-        non_terminals = mul * (len(self.non_terminals) - 1) + '%s\n'
+        mul = "%s, "
+        ans = "Non-Terminals:\n\t"
+        non_terminals = mul * (len(self.non_terminals) - 1) + "%s\n"
         ans += non_terminals % tuple(self.non_terminals)
-        ans += 'Terminals:\n\t'
-        terminals = mul * (len(self.terminals) - 1) + '%s\n'
+        ans += "Terminals:\n\t"
+        terminals = mul * (len(self.terminals) - 1) + "%s\n"
         ans += terminals % tuple(self.terminals)
-        ans += 'Productions:\n\t'
+        ans += "Productions:\n\t"
         ans += str(self.productions)
         return ans
 
 
 class Item:
-    def __init__(self, production: Production, pos: int, lookaheads: Iterable[Symbol] = None):
+    def __init__(
+        self, production: Production, pos: int, lookaheads: Iterable[Symbol] = None
+    ):
         if lookaheads is None:
             lookaheads = []
         self.production: Production = production
@@ -579,9 +640,9 @@ class Item:
 
     def __eq__(self, other):
         return (
-                (self.pos == other.pos) and
-                (self.production == other.production) and
-                (set(self.lookaheads) == set(other.lookaheads))
+            (self.pos == other.pos)
+            and (self.production == other.production)
+            and (set(self.lookaheads) == set(other.lookaheads))
         )
 
     def __hash__(self):
@@ -598,22 +659,22 @@ class Item:
         else:
             return None
 
-    def next_item(self) -> Optional['Item']:
+    def next_item(self) -> Optional["Item"]:
         if self.pos < len(self.production.right):
             return Item(self.production, self.pos + 1, self.lookaheads)
         else:
             return None
 
     def preview(self, skip: int = 1) -> List[Symbol]:
-        unseen = self.production.right[self.pos + skip:]
+        unseen = self.production.right[self.pos + skip :]
         return [unseen + (lookahead,) for lookahead in self.lookaheads]
 
-    def center(self) -> 'Item':
+    def center(self) -> "Item":
         return Item(self.production, self.pos)
 
 
 class RuleList:
-    def __init__(self, parser: 'ShiftReduceParser', rules: list):
+    def __init__(self, parser: "ShiftReduceParser", rules: list):
         self.__parser = parser
         self.__list = rules
 
@@ -732,7 +793,9 @@ def compute_follows(grammar: Grammar, firsts):
                     try:
                         first_beta = local_firsts[alpha, i]
                     except KeyError:
-                        first_beta = local_firsts[alpha, i] = compute_local_first(firsts, alpha[i + 1:])
+                        first_beta = local_firsts[alpha, i] = compute_local_first(
+                            firsts, alpha[i + 1 :]
+                        )
                     # First(beta) - { epsilon } subset of Follow(Y)
                     change |= follow_y.update(first_beta)
                     # beta ->* epsilon or X -> zeta Y ? Follow(X) subset of Follow(Y)
@@ -756,7 +819,9 @@ def closure_lr0(items: Iterable[Item]):
         if current.is_reduce_item or symbol.is_terminal:
             continue
 
-        new_items = set(Item(p, 0) for p in symbol.productions)  # if Item(p, 0) not in closure]
+        new_items = set(
+            Item(p, 0) for p in symbol.productions
+        )  # if Item(p, 0) not in closure]
         pending |= new_items - closure
         closure |= new_items
     return frozenset(closure)
@@ -767,7 +832,7 @@ def goto_lr0(items: Iterable[Item], symbol: Symbol) -> FrozenSet[Item]:
 
 
 def build_lr0_automaton(grammar: Grammar, just_kernel: bool = False) -> State:
-    assert len(grammar.start_symbol.productions) == 1, 'Grammar must be augmented'
+    assert len(grammar.start_symbol.productions) == 1, "Grammar must be augmented"
 
     start_production = grammar.start_symbol.productions[0]
     start_item = Item(start_production, 0)
@@ -785,7 +850,9 @@ def build_lr0_automaton(grammar: Grammar, just_kernel: bool = False) -> State:
     while pending:
         current = pending.pop()
         current_state = visited[current]
-        current_closure = current_state.state if not just_kernel else closure_lr0(current)
+        current_closure = (
+            current_state.state if not just_kernel else closure_lr0(current)
+        )
         for symbol in symbols:
             kernel = goto_lr0(current_closure, symbol)
 
@@ -795,8 +862,11 @@ def build_lr0_automaton(grammar: Grammar, just_kernel: bool = False) -> State:
             try:
                 next_state = visited[kernel]
             except KeyError:
-                next_state = visited[kernel] = State(closure_lr0(kernel), True) if not just_kernel else State(kernel,
-                                                                                                              True)
+                next_state = visited[kernel] = (
+                    State(closure_lr0(kernel), True)
+                    if not just_kernel
+                    else State(kernel, True)
+                )
                 pending.append(kernel)
 
             current_state.add_transition(symbol.name, next_state)
@@ -817,7 +887,9 @@ def compress(items: Iterable[Item]) -> Set[Item]:
             centers[center] = lookaheads = set()
         lookaheads.update(item.lookaheads)
 
-    return set(Item(x.production, x.pos, set(lookaheads)) for x, lookaheads in centers.items())
+    return set(
+        Item(x.production, x.pos, set(lookaheads)) for x, lookaheads in centers.items()
+    )
 
 
 def expand(item: Item, firsts):
@@ -847,13 +919,15 @@ def closure_lr1(items, firsts):
 
 
 def goto_lr1(items, symbol, firsts=None, just_kernel=False):
-    assert just_kernel or firsts is not None, '`firsts` must be provided if `just_kernel=False`'
+    assert (
+        just_kernel or firsts is not None
+    ), "`firsts` must be provided if `just_kernel=False`"
     items = frozenset(item.next_item() for item in items if item.next_symbol == symbol)
     return items if just_kernel else closure_lr1(items, firsts)
 
 
 def build_lr1_automaton(grammar, firsts=None):
-    assert len(grammar.start_symbol.productions) == 1, 'Grammar must be augmented'
+    assert len(grammar.start_symbol.productions) == 1, "Grammar must be augmented"
 
     if not firsts:
         firsts = compute_firsts(grammar)
@@ -897,16 +971,18 @@ def build_lr1_automaton(grammar, firsts=None):
 ###########################
 def determining_lookaheads(state, propagate, table, firsts):
     for item_kernel in state.state:
-        closure = closure_lr1([Item(item_kernel.production, item_kernel.pos, ('#',))], firsts)
+        closure = closure_lr1(
+            [Item(item_kernel.production, item_kernel.pos, ("#",))], firsts
+        )
         for item in closure:
             if item.is_reduce_item:
                 continue
 
             next_state = state.get(item.next_symbol.name)
             next_item = item.next_item().center()
-            if '#' in item.lookaheads:
+            if "#" in item.lookaheads:
                 propagate[state, item_kernel].append((next_state, next_item))
-            table[next_state, next_item].extend(item.lookaheads - {'#'})
+            table[next_state, next_item].extend(item.lookaheads - {"#"})
 
 
 def build_lalr1_automaton(grammar, firsts=None):
@@ -914,15 +990,17 @@ def build_lalr1_automaton(grammar, firsts=None):
 
     if not firsts:
         firsts = compute_firsts(grammar)
-    firsts['#'] = ContainerSet('#')
+    firsts["#"] = ContainerSet("#")
     firsts[grammar.EOF] = ContainerSet(grammar.EOF)
 
-    table = {(state, item): ContainerSet() for state in automaton for item in state.state}
+    table = {
+        (state, item): ContainerSet() for state in automaton for item in state.state
+    }
     propagate = {(state, item): [] for state in automaton for item in state.state}
 
     for state in automaton:
         determining_lookaheads(state, propagate, table, firsts)
-    del firsts['#']
+    del firsts["#"]
 
     start_item = list(automaton.state).pop()
     table[automaton, start_item] = ContainerSet(grammar.EOF)
@@ -948,14 +1026,18 @@ def build_lalr1_automaton(grammar, firsts=None):
 # SLR & LR1 & LALR1 Parsers #
 #############################
 class ShiftReduceParser:
-    SHIFT: str = 'SHIFT'
-    REDUCE: str = 'REDUCE'
-    OK: str = 'OK'
+    SHIFT: str = "SHIFT"
+    REDUCE: str = "REDUCE"
+    OK: str = "OK"
     contains_errors: bool = False
     current_token: Optional[Token] = None
 
-    def __init__(self, grammar: Grammar, verbose: bool = False,
-                 error_handler: Optional[Callable[['ShiftReduceParser'], None]] = None):
+    def __init__(
+        self,
+        grammar: Grammar,
+        verbose: bool = False,
+        error_handler: Optional[Callable[["ShiftReduceParser"], None]] = None,
+    ):
         self.grammar = grammar
         self.augmented_grammar = grammar.augmented_grammar(True)
         self.firsts = compute_firsts(self.augmented_grammar)
@@ -972,11 +1054,16 @@ class ShiftReduceParser:
         self._build_parsing_table()
 
         if self.conflicts:
-            sys.stderr.write(f"Warning: {self.shift_reduce_count} Shift-Reduce Conflicts\n")
-            sys.stderr.write(f"Warning: {self.reduce_reduce_count} Reduce-Reduce Conflicts\n")
+            sys.stderr.write(
+                f"Warning: {self.shift_reduce_count} Shift-Reduce Conflicts\n"
+            )
+            sys.stderr.write(
+                f"Warning: {self.reduce_reduce_count} Reduce-Reduce Conflicts\n"
+            )
 
-        self.error_handler: Optional[Callable[['ShiftReduceParser'], str]] = error_handler if \
-            error_handler is not None else self.error
+        self.error_handler: Optional[Callable[["ShiftReduceParser"], str]] = (
+            error_handler if error_handler is not None else self.error
+        )
 
     ##############
     # Errors API #
@@ -989,12 +1076,12 @@ class ShiftReduceParser:
         self._errors.append((line, column, message))
 
     @staticmethod
-    def error(parser: 'ShiftReduceParser'):
+    def error(parser: "ShiftReduceParser"):
         parser.add_error(
             parser.current_token.line,
             parser.current_token.column,
             f'Parsing Error at "{parser.current_token.lex}" in line "{parser.current_token.line}" and column'
-            f' "{parser.current_token.column}"'
+            f' "{parser.current_token.column}"',
         )
 
     #############
@@ -1012,28 +1099,42 @@ class ShiftReduceParser:
             for item in node.state:
                 if item.is_reduce_item:
                     if item.production.left == grammar.start_symbol:
-                        self._register(self.action, (node.id, grammar.EOF), (self.OK, None))
+                        self._register(
+                            self.action, (node.id, grammar.EOF), (self.OK, None)
+                        )
                     else:
                         for lookahead in self._lookaheads(item):
-                            self._register(self.action, (node.id, lookahead), (self.REDUCE, item.production))
+                            self._register(
+                                self.action,
+                                (node.id, lookahead),
+                                (self.REDUCE, item.production),
+                            )
                 else:
                     symbol = item.next_symbol
                     if symbol.is_terminal:
-                        self._register(self.action, (node.id, symbol), (self.SHIFT, node.get(symbol.name).id))
+                        self._register(
+                            self.action,
+                            (node.id, symbol),
+                            (self.SHIFT, node.get(symbol.name).id),
+                        )
                     else:
-                        self._register(self.goto, (node.id, symbol), node.get(symbol.name).id)
+                        self._register(
+                            self.goto, (node.id, symbol), node.get(symbol.name).id
+                        )
 
     def _register(self, table, key, value):
         if key in table and table[key] != value:
             action, tag = table[key]
             if action != value[0]:
                 if action == self.SHIFT:
-                    table[key] = value  # By default shifting if exists a Shift-Reduce Conflict
+                    table[
+                        key
+                    ] = value  # By default shifting if exists a Shift-Reduce Conflict
                 self.shift_reduce_count += 1
-                self.conflicts.append(('SR', value[1], tag))
+                self.conflicts.append(("SR", value[1], tag))
             else:
                 self.reduce_reduce_count += 1
-                self.conflicts.append(('RR', value[1], tag))
+                self.conflicts.append(("RR", value[1], tag))
         else:
             table[key] = value
 
@@ -1051,7 +1152,9 @@ class ShiftReduceParser:
         :return: Any
         """
         inserted_error = False
-        stack: list = [0]  # The order in stack is [init state] + [symbol, rule, state, ...]
+        stack: list = [
+            0
+        ]  # The order in stack is [init state] + [symbol, rule, state, ...]
         cursor = 0
 
         while True:
@@ -1066,9 +1169,9 @@ class ShiftReduceParser:
                 lookahead.token_type = self.grammar[lookahead.token_type]
 
             if self.verbose:
-                prev = ' '.join([s.name for s in stack if isinstance(s, Symbol)])
-                post = ' '.join([tokens[i].lex for i in range(cursor, len(tokens))])
-                print(f'{prev} <-> {post}')
+                prev = " ".join([s.name for s in stack if isinstance(s, Symbol)])
+                post = " ".join([tokens[i].lex for i in range(cursor, len(tokens))])
+                print(f"{prev} <-> {post}")
                 print()
 
             ##########################
@@ -1079,10 +1182,15 @@ class ShiftReduceParser:
 
                 if (state, self.grammar.ERROR) in self.action:
                     if self.verbose:
-                        print(f'Inserted error token {lookahead,}')
+                        print(f"Inserted error token {lookahead,}")
 
                     inserted_error = True
-                    lookahead = Token(lookahead.lex, self.grammar.ERROR, lookahead.line, lookahead.column)
+                    lookahead = Token(
+                        lookahead.lex,
+                        self.grammar.ERROR,
+                        lookahead.line,
+                        lookahead.column,
+                    )
                 else:
                     # If an error insertion fails then the parsing process enter into a panic mode recovery
                     self.error_handler(self)
@@ -1102,7 +1210,7 @@ class ShiftReduceParser:
             if action == self.SHIFT:
                 # in this case tag is an integer
                 if self.verbose:
-                    print(f'Shift: {lookahead.lex, tag}')
+                    print(f"Shift: {lookahead.lex, tag}")
 
                 if not inserted_error:
                     # the rule of an error token is it lexeme
@@ -1114,14 +1222,16 @@ class ShiftReduceParser:
             elif action == self.REDUCE:
                 # in this case tag is a Production
                 if self.verbose:
-                    print(f'Reduce: {repr(tag)}')
+                    print(f"Reduce: {repr(tag)}")
 
                 head, body = tag
 
                 rules = RuleList(self, [None] * (len(body) + 1))
                 for i, s in enumerate(reversed(body), 1):
                     state, rules[-i], symbol = stack.pop(), stack.pop(), stack.pop()
-                    assert s == symbol, f'ReduceError: in production "{repr(tag)}". Expected {s} instead of {s}'
+                    assert (
+                        s == symbol
+                    ), f'ReduceError: in production "{repr(tag)}". Expected {s} instead of {s}'
 
                 if tag.rule is not None:
                     rules[0] = tag.rule(rules)
@@ -1132,7 +1242,7 @@ class ShiftReduceParser:
             elif action == self.OK:
                 return stack[2]
             else:
-                raise Exception(f'ParsingError: invalid action {action}')
+                raise Exception(f"ParsingError: invalid action {action}")
 
             inserted_error = False
 

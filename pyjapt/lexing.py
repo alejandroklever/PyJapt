@@ -27,7 +27,7 @@ class Token:
         self.column: int = column
 
     def __str__(self):
-        return f'{self.token_type}: {self.lex}'
+        return f"{self.token_type}: {self.lex}"
 
     def __repr__(self):
         return str(self)
@@ -36,11 +36,19 @@ class Token:
     def is_valid(self):
         return True
 
+    @staticmethod
+    def empty() -> "Token":
+        return Token("", "", 0, 0)
+
 
 class Lexer:
-    def __init__(self, table: List[Tuple[str, str]], eof: str,
-                 token_rules: Optional[Dict[str, Callable[['Lexer'], Optional[Token]]]] = None,
-                 error_handler: Optional[Callable[['Lexer'], None]] = None):
+    def __init__(
+        self,
+        table: List[Tuple[str, str]],
+        eof: str,
+        token_rules: Optional[Dict[str, Callable[["Lexer"], Optional[Token]]]] = None,
+        error_handler: Optional[Callable[["Lexer"], None]] = None,
+    ):
         if token_rules is None:
             token_rules = {}
 
@@ -50,10 +58,12 @@ class Lexer:
         self.lineno: int = 1  # Current line number
         self.column: int = 1  # Current column in the line
         self.position: int = 0  # Current position in recognition
-        self.text = ''  # current text
-        self.token: Token = Token('', '', 0, 0)  # Current token in recognition
+        self.text: str = ""  # current text
+        self.token: Token = Token.empty()  # Current token in recognition
         self.pattern: Pattern = self._build_regex(table)
-        self.token_rules = token_rules  # type: Dict[str, Callable[['Lexer'], Optional[Token]]]
+        self.token_rules = (
+            token_rules
+        )  # type: Dict[str, Callable[['Lexer'], Optional[Token]]]
         self.contain_errors: bool = False
         self.error_handler = error_handler if error_handler is not None else self.error
         self.eof: str = eof
@@ -71,7 +81,9 @@ class Lexer:
                 continue
 
             lexeme = match.group()
-            token_type = match.lastgroup if match.lastgroup is not None else match.group()
+            token_type = (
+                match.lastgroup if match.lastgroup is not None else match.group()
+            )
             self.token = Token(lexeme, token_type, self.lineno, self.column)
 
             if token_type in self.token_rules:
@@ -84,7 +96,7 @@ class Lexer:
 
             self.position = match.end()
             self.column += len(match.group())
-        yield Token('$', self.eof, self.lineno, self.column)
+        yield Token("$", self.eof, self.lineno, self.column)
 
     @property
     def errors(self, clean: bool = True):
@@ -94,20 +106,36 @@ class Lexer:
         self._errors.append((line, col, error_msg))
 
     @staticmethod
-    def error(lexer: 'Lexer') -> None:
+    def error(lexer: "Lexer") -> None:
         lexer.add_error(
             lexer.token.line,
             lexer.token.column,
             f'Tokenization error: unexpected symbol "{lexer.token.lex}" '
-            f'at line "{lexer.token.line}" and column "{lexer.token.column}"'
+            f'at line "{lexer.token.line}" and column "{lexer.token.column}"',
         )
         lexer.position += len(lexer.token.lex)
         lexer.column += len(lexer.token.lex)
 
     @staticmethod
     def _build_regex(table: List[Tuple[str, str]]) -> Pattern:
-        return re.compile('|'.join(
-            [('(?P<%s>%s)' % (name, regex) if name is not None else '(%s)' % regex) for name, regex in table]))
+        return re.compile(
+            "|".join(
+                [
+                    (
+                        "(?P<%s>%s)" % (name, regex)
+                        if name is not None
+                        else "(%s)" % regex
+                    )
+                    for name, regex in table
+                ]
+            )
+        )
 
     def __call__(self, text: str) -> List[Token]:
+        self.lineno = 1
+        self.column = 1
+        self.position = 0
+        self.text = ""
+        self.token = Token.empty()
+
         return list(self.tokenize(text))
