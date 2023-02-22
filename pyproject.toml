@@ -1,20 +1,21 @@
 [tool.poetry]
 name = "pyjapt"
-version = "0.3.5"
+version = "0.4.0"
 description = "Just Another Parsing Tool Written in Python"
-authors = ["Alejandro Klever <alejandroklever.workon@gmail.com>"]
+authors = ["Alejandro Klever <alejandroklever@alejandroklever.dev>"]
 readme = "README.md"
 homepage = "https://github.com/alejandroklever/PyJapt"
 exclude = ["tests/excluded.py"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
+flake8 = "^6.0.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^7.2.1"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.3.2"]
 build-backend = "poetry.masonry.api"
 
 [tool.pytest.ini_options]
