@@ -1,5 +1,5 @@
 # Lexer and LR parser generator  "PyJapt"
-
+ 
 ## Installation
 
 ```sh
