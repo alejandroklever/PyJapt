@@ -1,5 +1,7 @@
 # Lexer and LR parser generator  "PyJapt"
 
+<img width="1823" alt="PyJapt Logo Banner" src="https://github.com/alejandroklever/PyJapt/assets/45394625/ce9fd982-8f08-41ba-aa9e-54c2de24212b">
+
 ## Installation
 
 ```sh
