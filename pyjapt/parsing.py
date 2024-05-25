@@ -2,14 +2,15 @@ import json
 import re
 import sys
 from typing import (
-    List,
-    FrozenSet,
-    Optional,
-    Tuple,
-    Iterable,
     Callable,
     Dict,
+    FrozenSet,
+    Iterable,
+    List,
+    Literal,
+    Optional,
     Set,
+    Tuple,
     Union,
 )
 
@@ -500,7 +501,7 @@ class Grammar:
             self.lexical_error_handler,
         )
 
-    def get_parser(self, name: str, verbose: bool = False):
+    def get_parser(self, name: Literal['slr', 'lalr1', 'lr1'], verbose: bool = False):
         if name == "slr":
             return SLRParser(self, verbose)
 

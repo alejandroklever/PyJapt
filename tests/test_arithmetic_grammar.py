@@ -1,3 +1,4 @@
+from typing import Literal
 import pytest
 
 from pyjapt import Grammar
@@ -17,7 +18,7 @@ tests = [
 ]
 
 
-def get_artithmetic_exception_grammar() -> Grammar:
+def get_artithmetic_expressions_grammar() -> Grammar:
     g = Grammar()
     expr = g.add_non_terminal("expr", True)
     term, fact = g.add_non_terminals("term fact")
@@ -47,14 +48,26 @@ def get_artithmetic_exception_grammar() -> Grammar:
     return g
 
 
-def parse(parser_name: str, text: str):
-    g = get_artithmetic_exception_grammar()
+def parse(parser_name: Literal['slr', 'lr1', 'lalr1'], text: str):
+    g = get_artithmetic_expressions_grammar()
     lexer = g.get_lexer()
     parser = g.get_parser(parser_name)
 
     return parser(lexer(text))
 
-
+@pytest.mark.slr
 @pytest.mark.parametrize("test,expected", tests)
 def test_slr(test, expected):
     assert parse("slr", test) == expected, "Bad Parsing"
+
+
+@pytest.mark.lr1
+@pytest.mark.parametrize("test,expected", tests)
+def test_lr1(test, expected):
+    assert parse("lr1", test) == expected, "Bad Parsing"
+
+
+@pytest.mark.lalr1
+@pytest.mark.parametrize("test,expected", tests)
+def test_lalr1(test, expected):
+    assert parse("lalr1", test) == expected, "Bad Parsing"
