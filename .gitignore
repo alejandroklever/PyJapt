@@ -142,6 +142,7 @@ cython_debug/
 
 # project folders
 .idea
+.vscode/settings.json
 build
 dist
 pyjapt.egg-info

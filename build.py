@@ -1,13 +1,10 @@
 import os
 import re
+import pyjapt
 
 
 with open("pyjapt/__init__.py", "r") as f:
-    version = (
-        re.search(r"__version__ = \"\d\.\d\.\d\"", f.read())
-        .group()
-        .replace('__version__ = "', "")[:-1]
-    )
+    version = pyjapt.__version__
 
 with open("pyproject.toml", "r") as f:
     s = f.read()
