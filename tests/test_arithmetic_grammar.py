@@ -2,7 +2,7 @@ from typing import Literal
 import pytest
 
 from pyjapt import Grammar
-from pyjapt.typing import RuleList, Lexer, SLRParser, LR1Parser, LALR1Parser
+from pyjapt.typing import RuleList, Lexer
 
 
 tests = [
@@ -18,7 +18,7 @@ tests = [
 ]
 
 
-def get_artithmetic_expressions_grammar() -> Grammar:
+def get_arithmetic_expressions_grammar() -> Grammar:
     g = Grammar()
     expr = g.add_non_terminal("expr", True)
     term, fact = g.add_non_terminals("term fact")
@@ -48,12 +48,13 @@ def get_artithmetic_expressions_grammar() -> Grammar:
     return g
 
 
-def parse(parser_name: Literal['slr', 'lr1', 'lalr1'], text: str):
-    g = get_artithmetic_expressions_grammar()
+def parse(parser_name: Literal["slr", "lr1", "lalr1"], text: str):
+    g = get_arithmetic_expressions_grammar()
     lexer = g.get_lexer()
     parser = g.get_parser(parser_name)
 
     return parser(lexer(text))
+
 
 @pytest.mark.slr
 @pytest.mark.parametrize("test,expected", tests)
