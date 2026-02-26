@@ -224,4 +224,4 @@ g2 = Grammar.from_json(json_str)
 ```
 
 !!! note
-    JSON serialisation does not preserve terminal regexes, terminal rules, or semantic actions. It is useful for inspecting grammar structure, not for production use. Use [Python file serialisation](serialization.md) for production scenarios.
+    JSON serialization does not preserve terminal regexes, terminal rules, or semantic actions. It is useful for inspecting grammar structure, not for production use. Use [Python file serialization](serialization.md) for production scenarios.

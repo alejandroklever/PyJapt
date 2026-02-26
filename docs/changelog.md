@@ -28,7 +28,7 @@ This project follows [Semantic Versioning](https://semver.org) and the
 ### Planned — Testing
 - Add tests for LR(1) and LALR(1) parsers.
 - Add tests for lexer and parser error handling.
-- Add tests for serialisation round-trips.
+- Add tests for serialization round-trips.
 - Add edge-case tests (empty grammar, duplicate symbols, epsilon productions).
 - Enforce minimum test coverage threshold.
 
@@ -62,7 +62,7 @@ This project follows [Semantic Versioning](https://semver.org) and the
 - Improved `RuleList` error API.
 
 ### Fixed
-- Reset lexer parameters when analysing a new string (`Lexer.__call__`).
+- Reset lexer parameters when analyzing a new string (`Lexer.__call__`).
 
 ---
 
@@ -77,7 +77,7 @@ This project follows [Semantic Versioning](https://semver.org) and the
 
 ### Added
 - SLR, LR(1), and LALR(1) parsers.
-- Serialisation of lexer and parser to Python source files.
+- Serialization of lexer and parser to Python source files.
 - `@g.terminal` decorator for inline rule definition.
 - `@g.production` decorator for inline production rules.
 - `@g.lexical_error` and `@g.parsing_error` decorators.

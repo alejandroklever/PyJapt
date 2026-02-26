@@ -16,7 +16,7 @@
 | **Three LR parser types** | SLR, LR(1), and LALR(1) — choose the power level you need. |
 | **Custom error handling** | Lexical and syntactic error handlers are first-class citizens. |
 | **Semantic actions** | Attach a lambda or a decorated function to any production rule. |
-| **Serialisation** | Pre-build the parsing tables and serialise them to a Python module for faster startup. |
+| **Serialization** | Pre-build the parsing tables and serialize them to a Python module for faster startup. |
 | **Decorator-based API** | Define terminals and production rules without leaving Python. |
 
 ---

@@ -203,7 +203,7 @@ Raises `ValueError` for unknown names.
 
 ---
 
-### Serialisation
+### Serialization
 
 ---
 
@@ -225,7 +225,7 @@ Generate `parsertab.py` in the current working directory.
 
 #### `Grammar.to_json() -> str`
 
-Serialise the grammar structure (terminals, non-terminals, productions) to a JSON string. Semantic actions and regexes are **not** included.
+Serialize the grammar structure (terminals, non-terminals, productions) to a JSON string. Semantic actions and regexes are **not** included.
 
 ---
 

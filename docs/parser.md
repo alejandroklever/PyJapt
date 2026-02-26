@@ -38,7 +38,7 @@ The parsing tables (ACTION and GOTO) encode which action to take for every (stat
 
 When two actions are valid for the same (state, lookahead) pair, a conflict arises:
 
-- **Shift-reduce (SR)** — the parser can either shift or reduce. PyJapt resolves SR conflicts in favour of **shift** (same as most tools, because it handles `if-else` correctly).
+- **Shift-reduce (SR)** — the parser can either shift or reduce. PyJapt resolves SR conflicts in favor of **shift** (same as most tools, because it handles `if-else` correctly).
 - **Reduce-reduce (RR)** — two different reductions are possible. PyJapt keeps whichever was registered first.
 
 Conflicts are printed to `stderr` and stored in `parser.conflicts`:
@@ -141,4 +141,4 @@ print(parser.goto)
 print(parser.augmented_grammar)
 ```
 
-These are Python dicts and can be serialised — see [Serialisation](serialization.md).
+These are Python dicts and can be serialized — see [Serialization](serialization.md).
