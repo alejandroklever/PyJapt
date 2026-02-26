@@ -6,7 +6,7 @@ Good error handling is one of PyJapt's core design goals. This page describes ho
 
 ## Lexical Error Handling
 
-### Default behaviour
+### Default behavior
 
 When the lexer encounters a character that matches no terminal pattern, it calls the *lexical error handler*. By default, this adds an error message to the internal errors list and advances past the bad character.
 
@@ -70,7 +70,7 @@ if lexer.contain_errors:
 
 ## Syntactic Error Handling
 
-### Default behaviour
+### Default behavior
 
 When the parser cannot find an action for the current `(state, token)` pair it enters *panic-mode recovery*: it calls the error handler and then skips input tokens until it finds one that fits the current state.
 

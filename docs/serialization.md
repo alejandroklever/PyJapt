@@ -1,6 +1,6 @@
-# Serialisation
+# Serialization
 
-For large grammars, building the parsing tables from scratch on every run can take seconds. PyJapt lets you *serialise* the pre-computed tables into plain Python modules so that subsequent runs skip the construction step entirely.
+For large grammars, building the parsing tables from scratch on every run can take seconds. PyJapt lets you *serialize* the pre-computed tables into plain Python modules so that subsequent runs skip the construction step entirely.
 
 ---
 
@@ -12,7 +12,7 @@ The generated classes extend `Lexer` and `ShiftReduceParser` respectively, so th
 
 ---
 
-## Serialising the Lexer
+## Serializing the Lexer
 
 ```python
 import inspect
@@ -48,7 +48,7 @@ class MyLexer(Lexer):
 
 ---
 
-## Serialising the Parser
+## Serializing the Parser
 
 ```python
 if __name__ == '__main__':
@@ -96,7 +96,7 @@ result = parser(lexer(source_code))
 
 ## Full Example
 
-**`grammar.py`** — define the grammar and conditionally serialise:
+**`grammar.py`** — define the grammar and conditionally serialize:
 
 ```python
 import inspect
@@ -165,6 +165,6 @@ parsertab.py
 
 ## Caveats
 
-- **Semantic actions are not serialised.** The generated parser still imports the original grammar module (`grammar_module_name`) at runtime to access production rules and semantic actions.
+- **Semantic actions are not serialized.** The generated parser still imports the original grammar module (`grammar_module_name`) at runtime to access production rules and semantic actions.
 - **The grammar module must be importable.** Make sure `grammar.py` (or whatever you named it) is on the Python path when running the generated classes.
-- **Files are written to the current working directory.** Run the serialisation script from the directory where you want the files to be created.
+- **Files are written to the current working directory.** Run the serialization script from the directory where you want the files to be created.
