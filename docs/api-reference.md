@@ -15,6 +15,7 @@ from pyjapt import (
     SLRParser,
     LR1Parser,
     LALR1Parser,
+    RuleList,
 )
 ```
 
