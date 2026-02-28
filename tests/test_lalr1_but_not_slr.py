@@ -21,7 +21,6 @@ def grammar():
 def test_slr():
     g = grammar()
     parser = g.get_parser("slr")
-    print(parser.conflicts)
     assert parser.has_conflicts
 
 
