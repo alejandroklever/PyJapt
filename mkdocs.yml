@@ -1,0 +1,78 @@
+site_name: PyJapt
+site_description: A lexer and LR parser generator written in Python
+site_author: Alejandro Klever
+site_url: https://alejandroklever.github.io/PyJapt
+repo_name: alejandroklever/PyJapt
+repo_url: https://github.com/alejandroklever/PyJapt
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guide:
+    - Defining a Grammar: defining-grammar.md
+    - Configuring the Lexer: lexer.md
+    - Building a Parser: parser.md
+    - Error Handling: error-handling.md
+    - Serialization: serialization.md
+  - API Reference: api-reference.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/alejandroklever/PyJapt
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/pyjapt/
+  version:
+    provider: mike
