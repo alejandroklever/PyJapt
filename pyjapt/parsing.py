@@ -2,14 +2,15 @@ import json
 import re
 import sys
 from typing import (
-    List,
-    FrozenSet,
-    Optional,
-    Tuple,
-    Iterable,
     Callable,
     Dict,
+    FrozenSet,
+    Iterable,
+    List,
+    Literal,
+    Optional,
     Set,
+    Tuple,
     Union,
 )
 
@@ -500,7 +501,7 @@ class Grammar:
             self.lexical_error_handler,
         )
 
-    def get_parser(self, name: str, verbose: bool = False):
+    def get_parser(self, name: Literal["slr", "lalr1", "lr1"], verbose: bool = False):
         if name == "slr":
             return SLRParser(self, verbose)
 
@@ -734,7 +735,7 @@ def compute_local_first(firsts, alpha):
     return first_alpha
 
 
-def compute_firsts(grammar: Grammar):
+def compute_firsts(grammar: Grammar) -> Dict[Symbol, ContainerSet]:
     firsts = {}
     change = True
 
@@ -808,7 +809,7 @@ def compute_follows(grammar: Grammar, firsts):
 #########################
 # LR0 AUTOMATA BUILDING #
 #########################
-def closure_lr0(items: Iterable[Item]):
+def closure_lr0(items: Iterable[Item]) -> FrozenSet[Item]:
     closure = set(items)
 
     pending = set(items)
@@ -926,7 +927,7 @@ def goto_lr1(items, symbol, firsts=None, just_kernel=False):
     return items if just_kernel else closure_lr1(items, firsts)
 
 
-def build_lr1_automaton(grammar, firsts=None):
+def build_lr1_automaton(grammar: Grammar, firsts=None):
     assert len(grammar.start_symbol.productions) == 1, "Grammar must be augmented"
 
     if not firsts:
@@ -1057,6 +1058,7 @@ class ShiftReduceParser:
             sys.stderr.write(
                 f"Warning: {self.shift_reduce_count} Shift-Reduce Conflicts\n"
             )
+
             sys.stderr.write(
                 f"Warning: {self.reduce_reduce_count} Reduce-Reduce Conflicts\n"
             )
@@ -1083,6 +1085,10 @@ class ShiftReduceParser:
             f'Parsing Error at "{parser.current_token.lex}" in line "{parser.current_token.line}" and column'
             f' "{parser.current_token.column}"',
         )
+
+    @property
+    def has_conflicts(self) -> bool:
+        return self.conflicts != []
 
     #############
     #    End    #
@@ -1127,9 +1133,9 @@ class ShiftReduceParser:
             action, tag = table[key]
             if action != value[0]:
                 if action == self.SHIFT:
-                    table[
-                        key
-                    ] = value  # By default shifting if exists a Shift-Reduce Conflict
+                    table[key] = (
+                        value  # By default shifting if exists a Shift-Reduce Conflict
+                    )
                 self.shift_reduce_count += 1
                 self.conflicts.append(("SR", value[1], tag))
             else:

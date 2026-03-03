@@ -21,5 +21,7 @@ build-backend = "poetry.masonry.api"
 [tool.pytest.ini_options]
 markers = [
     "slr: test using the slr parser",
+    "lr1: test using the lr1 parser",
+    "lalr1: test using the lalr1 parser",
     "serial",
 ]
