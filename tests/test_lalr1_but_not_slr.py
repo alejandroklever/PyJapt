@@ -1,3 +1,5 @@
+import pytest
+
 from pyjapt import Grammar
 
 
@@ -24,6 +26,7 @@ def test_slr():
     assert parser.has_conflicts
 
 
+@pytest.mark.lalr1
 def test_lalr():
     g = grammar()
     parser = g.get_parser("lalr1")
