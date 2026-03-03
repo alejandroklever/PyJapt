@@ -3,8 +3,7 @@ import re
 import pyjapt
 
 
-with open("pyjapt/__init__.py", "r") as f:
-    version = pyjapt.__version__
+version = pyjapt.__version__
 
 with open("pyproject.toml", "r") as f:
     s = f.read()
